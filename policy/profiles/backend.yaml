@@ -1,0 +1,8 @@
+name: backend
+description: APIs, persistence, concurrency, auth, IAM, operations and data risk.
+add:
+  capabilities: []
+  protected_characteristics: [api_trust_boundary, migration, infrastructure, retry, concurrency, learner_entitlement]
+  protected_path_hints: ["**/auth/**", "**/iam/**", "**/payments/**", "**/infra/**", "**/migrations/**", ".github/workflows/deploy*.yml"]
+  ux_triggers: []
+

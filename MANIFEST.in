@@ -1,0 +1,5 @@
+recursive-include policy *.yaml
+recursive-include schemas *.json
+recursive-include skills SKILL.md *.md
+recursive-include templates *.yml
+recursive-include docs *.md

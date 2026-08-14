@@ -1,0 +1,60 @@
+schema_version: 1
+process:
+  version: 1.0.0
+  source: suyog19/software-engineering-process
+controls:
+  traceability:
+    semantics: locked
+    enabled: true
+  issue_first:
+    semantics: locked
+    enabled: true
+  independent_review:
+    semantics: locked
+    enabled: true
+    fresh_context_required: true
+    implementation_context_may_issue_verdict: false
+  protected_fail_closed:
+    semantics: locked
+    enabled: true
+  exact_revision_evidence:
+    semantics: locked
+    enabled: true
+  committed_secrets_prohibited:
+    semantics: locked
+    enabled: true
+  human_production_boundary:
+    semantics: locked
+    enabled: true
+    prevent_self_approval: true
+  required_capabilities:
+    semantics: extensible
+    values: [software-developer, ci-automation]
+  protected_characteristics:
+    semantics: extensible
+    values: [financial_consequence, payment, authentication, authorization, iam, secrets, sensitive_data, production_controls, irreversible_data]
+  validation_commands:
+    semantics: overridable
+    values: []
+  repository_paths:
+    semantics: overridable
+    values: []
+capabilities:
+  product-owner: {authority: product_intent_and_acceptance}
+  orchestrator: {authority: classification_handoffs_and_evidence}
+  senior-ux-designer: {authority: user_interaction_accessibility_perspective}
+  architect: {authority: architecture_and_technical_boundaries}
+  engineering-manager: {authority: delivery_risk_and_operational_realism}
+  software-developer: {authority: implementation_within_resolved_obligations}
+  functional-qa: {authority: independent_behavioural_assurance}
+  non-functional-qa: {authority: security_reliability_performance_privacy_operations}
+  independent-review: {authority: fresh_context_final_review}
+  solution-sufficiency: {authority: minimum_sufficient_solution_and_feedback_triage}
+  ci-automation: {authority: objective_checks_and_policy_enforcement}
+native_enforcement:
+  required_status_checks: [engineering-process]
+  protected_branches: true
+  production_environment:
+    required_human_reviewer: true
+    prevent_self_review: true
+

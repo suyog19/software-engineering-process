@@ -1,0 +1,19 @@
+name: Process readiness
+on:
+  workflow_call:
+    inputs:
+      target-sha: {required: true, type: string}
+permissions:
+  contents: read
+jobs:
+  process:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: "${{ inputs.target-sha }}", fetch-depth: 0}
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - run: pip install software-engineering-process
+      - run: engineering-process validate
+      - run: engineering-process readiness --sha "${{ inputs.target-sha }}"
+

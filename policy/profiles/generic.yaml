@@ -1,0 +1,8 @@
+name: generic
+description: General engineering domain without stack assumptions.
+add:
+  capabilities: []
+  protected_characteristics: []
+  protected_path_hints: []
+  ux_triggers: []
+

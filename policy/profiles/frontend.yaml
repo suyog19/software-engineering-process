@@ -1,0 +1,8 @@
+name: frontend
+description: User journeys, interaction, accessibility, browser behaviour and client risk.
+add:
+  capabilities: []
+  protected_characteristics: [client_security, sensitive_admin_action, refund_or_cancellation]
+  protected_path_hints: ["**/auth/**", "**/payments/**", "**/checkout/**", "**/admin/security/**"]
+  ux_triggers: [new_user_journey, major_existing_journey_change, information_architecture_change, material_navigation_change, material_layout_change, user_facing_workflow_redesign]
+

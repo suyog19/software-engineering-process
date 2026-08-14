@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://suyogjoshi.com/software-signal/engineering/repository-process/v1",
+  "type": "object",
+  "required": ["schema_version", "process", "repository"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {"const": 1},
+    "process": {
+      "type": "object", "additionalProperties": false,
+      "required": ["source", "version", "revision", "profile"],
+      "properties": {
+        "source": {"const": "suyog19/software-engineering-process"},
+        "version": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"},
+        "revision": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+        "profile": {"enum": ["generic", "frontend", "backend"]}
+      }
+    },
+    "repository": {
+      "type": "object", "required": ["name"], "additionalProperties": true,
+      "properties": {"name": {"type": "string", "minLength": 1}}
+    },
+    "overrides": {
+      "type": "object", "additionalProperties": false,
+      "properties": {
+        "technology": {"type": "object"},
+        "validation": {"type": "object", "properties": {"commands": {"type": "array", "items": {"type": "string"}}}},
+        "classification": {"type": "object", "properties": {"protected_path_hints": {"type": "array", "items": {"type": "string"}}, "additional_protected_characteristics": {"type": "array", "items": {"type": "string"}}}},
+        "ux": {"type": "object", "properties": {"additional_required_when": {"type": "array", "items": {"type": "string"}}}},
+        "controls": {"type": "object"},
+        "native_enforcement": {"type": "object"}
+      }
+    }
+  }
+}
+

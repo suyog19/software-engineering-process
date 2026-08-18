@@ -28,7 +28,7 @@ engineering-process --root ../my-web-app init \
   --profile frontend --repository-name suyog19/my-web-app
 ```
 
-Or supply an immutable released revision explicitly with `--revision <40-hex-sha>`. Initialization creates the manifest and lock, compact `AGENTS.md`/`CLAUDE.md`, portable Skills, and a validation workflow. Add repository differences—validation commands, protected path hints, UX triggers—to `.engineering/process.yaml`, then re-render/re-lock using a reviewed process upgrade.
+Or supply an immutable released revision explicitly with `--revision <40-hex-sha>`. Initialization creates the manifest and lock, compact `AGENTS.md`/`CLAUDE.md`, portable Skills, and a validation workflow. Existing assistant context is never silently overwritten; follow the [mature repository migration](docs/adoption.md#mature-repository-migration) and use the explicit `--adopt-existing-context` flow. Add repository differences—validation commands, protected path hints, UX triggers—to `.engineering/process.yaml`, then re-render/re-lock using a reviewed process upgrade.
 
 ## Change flow
 

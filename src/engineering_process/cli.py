@@ -45,7 +45,7 @@ def parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(prog="engineering-process", description="Engineering policy and assurance CLI")
     p.add_argument("--root", default=".", help="participating repository root")
     sub = p.add_subparsers(dest="command", required=True)
-    init = sub.add_parser("init"); init.add_argument("--profile", required=True, choices=["generic", "frontend", "backend"]); init.add_argument("--repository-name"); init.add_argument("--revision"); init.add_argument("--force", action="store_true")
+    init = sub.add_parser("init"); init.add_argument("--profile", required=True, choices=["generic", "frontend", "backend"]); init.add_argument("--repository-name"); init.add_argument("--revision"); init.add_argument("--force", action="store_true"); init.add_argument("--adopt-existing-context", action="store_true")
     sub.add_parser("validate")
     for name in ("classify", "evaluate", "explain"):
         c = sub.add_parser(name); c.add_argument("--path", action="append"); c.add_argument("--declared"); c.add_argument("--semantic"); c.add_argument("--rationale"); c.add_argument("--sha")
@@ -63,7 +63,7 @@ def run(args: argparse.Namespace) -> dict:
     root = Path(args.root).resolve()
     if args.command == "init":
         revision = args.revision or current_revision(data_root())
-        return initialize(root, args.profile, args.repository_name or root.name, revision, args.force)
+        return initialize(root, args.profile, args.repository_name or root.name, revision, args.force, args.adopt_existing_context)
     manifest = _manifest(root)
     if args.command == "validate": return validate_repository(root)
     if args.command in {"classify", "evaluate", "explain"}:

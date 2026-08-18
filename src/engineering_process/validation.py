@@ -38,6 +38,13 @@ def validate_repository(root: Path) -> dict:
     if lock["manifest_digest"] != manifest_digest(manifest):
         raise ProcessError("process manifest drift: lock digest is stale")
     validate_overrides(core, manifest)
+    for item in manifest.get("local_context", []):
+        relative = Path(item["path"])
+        if relative.is_absolute() or ".." in relative.parts or relative.parts[0] in {".engineering", "AGENTS.md", "CLAUDE.md"}:
+            raise ProcessError(f"invalid local-context ownership boundary: {item['path']}")
+        context_path = root / relative
+        if not context_path.exists():
+            raise ProcessError(f"missing local-context reference: {item['path']}")
     for name, assistant in (("AGENTS.md", "codex"), ("CLAUDE.md", "claude")):
         path = root / name
         if not path.exists() or path.read_text(encoding="utf-8") != bootstrap(manifest, assistant):

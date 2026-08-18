@@ -1,11 +1,12 @@
 import json
+from pathlib import PureWindowsPath
 
 import pytest
 
 from engineering_process.errors import ProcessError
 from engineering_process.io import load_json, load_yaml
 from engineering_process.render import bootstrap, metrics
-from engineering_process.repository import apply_upgrade, initialize, upgrade_report
+from engineering_process.repository import _relative_posix, apply_upgrade, initialize, upgrade_report
 from engineering_process.validation import validate_repository
 from conftest import REV
 
@@ -15,6 +16,19 @@ def test_init_and_validate_end_to_end(tmp_path):
     assert result["skills"] == 6
     assert validate_repository(tmp_path)["valid"]
     assert "write clean code" not in (tmp_path / "AGENTS.md").read_text().lower()
+
+
+def test_generated_lock_paths_are_portable(tmp_path):
+    initialize(tmp_path, "frontend", "example/web", REV)
+    lock = load_json(tmp_path / ".engineering/process.lock")
+    assert all("\\" not in relative for relative in lock["generated_files"])
+    assert ".engineering/skills/architecture-review/SKILL.md" in lock["generated_files"]
+
+
+def test_relative_posix_converts_windows_paths():
+    root = PureWindowsPath(r"C:\repo")
+    path = root / ".engineering" / "skills" / "architecture-review" / "SKILL.md"
+    assert _relative_posix(path, root) == ".engineering/skills/architecture-review/SKILL.md"
 
 
 def test_codex_and_claude_preserve_semantics(manifest):
@@ -112,6 +126,8 @@ def test_upgrade_preserves_local_context_and_reports_adapter_changes(tmp_path):
     apply_upgrade(tmp_path, "1.0.0", "c" * 40)
     assert context_path.read_text(encoding="utf-8") == "local workflow"
     assert "c" * 40 in (tmp_path / ".github/workflows/process-validation.yml").read_text(encoding="utf-8")
+    lock = load_json(tmp_path / ".engineering/process.lock")
+    assert all("\\" not in relative for relative in lock["generated_files"])
     assert validate_repository(tmp_path)["valid"]
 
 

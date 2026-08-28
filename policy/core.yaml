@@ -1,6 +1,6 @@
 schema_version: 1
 process:
-  version: 1.0.0
+  version: 1.0.1
   source: suyog19/software-engineering-process
 controls:
   traceability:
@@ -26,7 +26,11 @@ controls:
   human_production_boundary:
     semantics: locked
     enabled: true
-    prevent_self_approval: true
+    human_authorization_required: true
+    manual_promotion_required: true
+    automation_may_authorize: false
+    automation_may_promote: false
+    owner_manual_authorization_may_satisfy: true
   required_capabilities:
     semantics: extensible
     values: [software-developer, ci-automation]
@@ -55,6 +59,7 @@ native_enforcement:
   required_status_checks: [engineering-process]
   protected_branches: true
   production_environment:
-    required_human_reviewer: true
-    prevent_self_review: true
-
+    manual_human_promotion_required: true
+    automation_may_promote: false
+    distinct_human_reviewer_required: false
+    stronger_multi_human_gate_permitted: true

@@ -654,6 +654,8 @@ Where approval is required, it should be recorded in durable project evidence.
 
 Production deployment and production-authority changes remain human controlled unless a future explicit policy changes that boundary.
 
+This boundary prohibits an implementation agent or automation from authorizing or promoting production. It does not by itself require two different human identities. In an owner-controlled repository, explicit owner authorization followed by manual owner merge or promotion satisfies the boundary. Fresh-context independent review remains a separate mandatory control and must not be issued by the implementation context. Repositories with multiple authorized maintainers may strengthen native enforcement with a distinct GitHub reviewer.
+
 ---
 
 ## 7.7 Scope discipline
@@ -1929,14 +1931,14 @@ Recommended enforcement mapping:
 |---|---|
 | Required CI/test verdict | GitHub required status check |
 | Protected branch/merge rule | GitHub ruleset / protected branch |
-| Human production approval | GitHub Environment required reviewer where available |
-| Prevent deployment self-approval | GitHub Environment self-review prevention |
+| Human production authorization | Manual owner/authorized-maintainer merge or promotion; optionally a GitHub Environment required reviewer |
+| Prevent autonomous deployment | Repository permissions and workflow design that deny agents/automation production authority |
 | Process/manifest legality | engineering-process validator |
 | Protected classification | classification policy + deterministic CI signals |
 | Exact revision evidence | attestation/evidence join |
 | Specialist procedure | Agent Skill / human procedure |
 
-GitHub documents required status checks that block merge until required checks pass, and protected environments can require reviewers and prevent the deployment initiator from approving their own deployment.[^R12][^R13]
+GitHub documents required status checks that block merge until required checks pass, and protected environments can require reviewers and prevent the deployment initiator from approving their own deployment.[^R12][^R13] The latter is an optional stronger multi-human control, not an unconditional interpretation of the canonical human production boundary.
 
 The canonical process owns the rule's semantics; native platforms enforce it when they have a reliable mechanism.
 

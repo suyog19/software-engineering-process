@@ -46,8 +46,9 @@ def evaluate(policy_root: Path, manifest: dict, classification: Classification) 
         "approvals": approvals,
         "prohibited_actions": sorted(selected["prohibited_actions"]),
         "native_enforcement": core["native_enforcement"],
+        "human_production_boundary": controls["human_production_boundary"],
+        "independent_review": controls["independent_review"],
         "validation_commands": controls["validation_commands"]["values"],
         "not_required": sorted(all_caps - capabilities),
         "execution_boundary": "Policy defines WHAT; assistants, humans, CI and native controls own HOW.",
     }
-

@@ -9,6 +9,10 @@
 
 Repository-local technology is deliberately opaque to policy. Put commands under `overrides.validation.commands`; add sensitive paths/characteristics and domain triggers when they strengthen classification. Never copy the canonical policy into the manifest.
 
+## Production authority and independent review
+
+The human production boundary and independent review are separate controls. Every change still requires fresh-context, implementation-independent review evidence. Production authorization and promotion remain manual human actions, and automation or agents may not perform them. For an owner-controlled repository, the owner's explicit authorization and manual merge or promotion satisfy the human boundary; a second human GitHub reviewer is not implicitly required. Repositories with multiple authorized maintainers may configure a stronger branch or Environment reviewer gate.
+
 ## Mature repository migration
 
 Initialization is non-destructive. If `AGENTS.md`, `CLAUDE.md`, or the process validation workflow is repository-owned, normal `init` stops before creating `.engineering/process.yaml`. Do not use `--force` to bypass this boundary.

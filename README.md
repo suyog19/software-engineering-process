@@ -63,6 +63,7 @@ engineering-process metrics --obligations .engineering/effective-obligations.jso
 ## Policy model
 
 - **Locked** controls cannot be changed locally (fresh-context independent review, fail-closed Protected routing, exact-revision evidence, secrets, traceability, human production boundary).
+- The human production boundary requires manual human authorization and promotion. A repository owner may satisfy it; it does not implicitly require a second human. Automation and agents may not authorize or promote production.
 - **Extensible** controls can only be strengthened.
 - **Overridable** mechanics belong to repositories (commands, paths, runtime, framework, environments).
 - Profiles describe engineering/risk domains (`generic`, `frontend`, `backend`), never languages or frameworks.

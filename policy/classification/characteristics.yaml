@@ -1,5 +1,5 @@
 lean_hints: [typo, documentation_only, metadata_only, mechanical_test_only, established_css_only]
-standard: [observable_behavior, public_contract, user_journey, information_architecture, architecture, cross_service, state_transition, validation_or_error, performance, retry, concurrency]
+standard: [observable_behavior, public_contract, user_journey, information_architecture, architecture, cross_service, state_transition, validation_or_error, performance, retry, concurrency, dependency_change, generated_change]
 protected: [financial_consequence, payment, payment_provider_trust, authentication, authorization, iam, privilege_or_trust, secrets, sensitive_data, production_controls, irreversible_data, infrastructure, refund_or_cancellation, learner_entitlement, sensitive_admin_action]
 deterministic_files:
   - {pattern: "**/auth/**", characteristic: authentication}
@@ -8,5 +8,15 @@ deterministic_files:
   - {pattern: "**/secrets/**", characteristic: secrets}
   - {pattern: "**/migrations/**", characteristic: irreversible_data}
   - {pattern: "**/infra/**", characteristic: infrastructure}
-  - {pattern: ".github/workflows/deploy*.yml", characteristic: production_controls}
-
+  - {pattern: ".github/workflows/**", characteristic: production_controls}
+  - {pattern: "**/package-lock.json", characteristic: dependency_change}
+  - {pattern: "**/requirements*.txt", characteristic: dependency_change}
+  - {pattern: "**/poetry.lock", characteristic: dependency_change}
+  - {pattern: "**/uv.lock", characteristic: dependency_change}
+  - {pattern: "**/Cargo.lock", characteristic: dependency_change}
+  - {pattern: "**/go.sum", characteristic: dependency_change}
+  - {pattern: "**/generated/**", characteristic: generated_change}
+  - {pattern: ".engineering/process.yaml", characteristic: privilege_or_trust}
+  - {pattern: ".engineering/process.lock", characteristic: privilege_or_trust}
+  - {pattern: "AGENTS.md", characteristic: privilege_or_trust}
+  - {pattern: "CLAUDE.md", characteristic: privilege_or_trust}

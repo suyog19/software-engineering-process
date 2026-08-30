@@ -22,7 +22,7 @@ def _validate_schema(value: dict, name: str) -> None:
         raise ProcessError(f"invalid {name}: " + "; ".join(errors))
 
 
-def validate_repository(root: Path) -> dict:
+def validate_repository(root: Path, runtime_revision: str | None = None) -> dict:
     manifest_path, lock_path = root / ".engineering/process.yaml", root / ".engineering/process.lock"
     if not manifest_path.exists() or not lock_path.exists():
         raise ProcessError("missing .engineering/process.yaml or .engineering/process.lock")
@@ -35,6 +35,11 @@ def validate_repository(root: Path) -> dict:
     for key in ("source", "version", "revision"):
         if lock[key] != manifest["process"][key]:
             raise ProcessError(f"process lock mismatch: {key}")
+    if runtime_revision is not None:
+        if len(runtime_revision) != 40 or any(c not in "0123456789abcdef" for c in runtime_revision):
+            raise ProcessError("runtime process revision must be an immutable 40-character Git SHA")
+        if runtime_revision != lock["revision"]:
+            raise ProcessError(f"runtime process revision mismatch: executing {runtime_revision}, locked {lock['revision']}")
     if lock["manifest_digest"] != manifest_digest(manifest):
         raise ProcessError("process manifest drift: lock digest is stale")
     validate_overrides(core, manifest)
@@ -67,4 +72,4 @@ def validate_repository(root: Path) -> dict:
         readiness = verify_readiness(obligations, load_attestations(root / ".engineering/evidence"), _schema("evidence.schema.json"), sha)
         if not readiness["ready"]:
             raise ProcessError(f"missing or invalid obligation evidence: {readiness}")
-    return {"valid": True, "profile": manifest["process"]["profile"], "version": lock["version"], "revision": lock["revision"]}
+    return {"valid": True, "profile": manifest["process"]["profile"], "version": lock["version"], "revision": lock["revision"], "runtime_revision": runtime_revision}

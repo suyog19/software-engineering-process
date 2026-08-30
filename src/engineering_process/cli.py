@@ -7,6 +7,7 @@ import subprocess
 from pathlib import Path
 
 from .classification import classify
+from .git_changes import collect_changes
 from .errors import ProcessError
 from .evaluation import evaluate
 from .evidence import load_attestations, make_attestation, verify_readiness
@@ -32,13 +33,20 @@ def _json_arg(value: str | None) -> dict:
 
 def _classification(args, root: Path, manifest: dict):
     _, profile, _ = load_policy(policy_root(), manifest["process"]["profile"])
-    sha = args.sha
+    if bool(args.base) != bool(args.head):
+        raise ProcessError("trusted classification requires both exact --base and --head revisions")
+    sha = args.head or args.sha
     if not sha:
         result = subprocess.run(["git", "rev-parse", "HEAD"], cwd=root, capture_output=True, text=True)
         sha = result.stdout.strip()
     if len(sha) != 40:
         raise ProcessError("classification requires an exact target revision; use --sha")
-    return classify(policy_root(), profile, manifest, args.path or [], _json_arg(args.declared), _json_arg(args.semantic), args.rationale or "", sha)
+    if args.base:
+        if args.path:
+            raise ProcessError("--path is untrusted diagnostic input and cannot be combined with trusted --base/--head classification")
+        paths, changes = collect_changes(root, args.base, sha)
+        return classify(policy_root(), profile, manifest, paths, _json_arg(args.declared), _json_arg(args.semantic), args.rationale or "", sha, args.base, changes, "trusted-git-diff")
+    return classify(policy_root(), profile, manifest, args.path or [], _json_arg(args.declared), _json_arg(args.semantic), args.rationale or "", sha, input_trust="untrusted-manual")
 
 
 def parser() -> argparse.ArgumentParser:
@@ -46,14 +54,14 @@ def parser() -> argparse.ArgumentParser:
     p.add_argument("--root", default=".", help="participating repository root")
     sub = p.add_subparsers(dest="command", required=True)
     init = sub.add_parser("init"); init.add_argument("--profile", required=True, choices=["generic", "frontend", "backend"]); init.add_argument("--repository-name"); init.add_argument("--revision"); init.add_argument("--force", action="store_true"); init.add_argument("--adopt-existing-context", action="store_true")
-    sub.add_parser("validate")
+    validate = sub.add_parser("validate"); validate.add_argument("--runtime-revision")
     for name in ("classify", "evaluate", "explain"):
-        c = sub.add_parser(name); c.add_argument("--path", action="append"); c.add_argument("--declared"); c.add_argument("--semantic"); c.add_argument("--rationale"); c.add_argument("--sha")
+        c = sub.add_parser(name); c.add_argument("--path", action="append", help="untrusted diagnostic-only path"); c.add_argument("--declared"); c.add_argument("--semantic"); c.add_argument("--rationale"); c.add_argument("--sha"); c.add_argument("--base"); c.add_argument("--head")
         if name == "evaluate": c.add_argument("--output", default=".engineering/effective-obligations.json")
     sub.add_parser("render")
     m = sub.add_parser("metrics"); m.add_argument("--obligations")
     e = sub.add_parser("attest"); e.add_argument("--predicate", required=True); e.add_argument("--sha", required=True); e.add_argument("--capability", required=True); e.add_argument("--verdict", required=True); e.add_argument("--identity", required=True); e.add_argument("--context-id", required=True); e.add_argument("--implementation-context-id"); e.add_argument("--fresh-context", action="store_true"); e.add_argument("--output", required=True)
-    r = sub.add_parser("readiness"); r.add_argument("--sha", required=True); r.add_argument("--obligations", default=".engineering/effective-obligations.json"); r.add_argument("--evidence-dir", default=".engineering/evidence")
+    r = sub.add_parser("readiness"); r.add_argument("--sha", required=True); r.add_argument("--obligations", default=".engineering/effective-obligations.json"); r.add_argument("--evidence-dir", default=".engineering/evidence"); r.add_argument("--trust-index", help="out-of-band verified transport index (must be outside repository)")
     s = sub.add_parser("sufficiency"); s.add_argument("--findings", required=True); s.add_argument("--output")
     u = sub.add_parser("upgrade"); u.add_argument("--version", required=True); u.add_argument("--revision", required=True); u.add_argument("--dry-run", action="store_true")
     return p
@@ -65,7 +73,11 @@ def run(args: argparse.Namespace) -> dict:
         revision = args.revision or current_revision(data_root())
         return initialize(root, args.profile, args.repository_name or root.name, revision, args.force, args.adopt_existing_context)
     manifest = _manifest(root)
-    if args.command == "validate": return validate_repository(root)
+    if args.command == "validate":
+        runtime_revision = args.runtime_revision
+        if not runtime_revision and __import__("os").environ.get("GITHUB_ACTIONS") == "true":
+            raise ProcessError("CI validation requires --runtime-revision from the locked bootstrap")
+        return validate_repository(root, runtime_revision)
     if args.command in {"classify", "evaluate", "explain"}:
         result = _classification(args, root, manifest)
         if args.command == "classify": return result.to_dict()
@@ -75,6 +87,7 @@ def run(args: argparse.Namespace) -> dict:
         return {"repository_profile": manifest["process"]["profile"], "delivery_profile": result.delivery_profile,
                 "process": manifest["process"], "change_characteristics": result.characteristics,
                 "deterministic_signals": result.deterministic_signals, "semantic_rationale": result.semantic_rationale,
+                "changed_path_explanations": result.path_explanations,
                 "why": result.reasons, "required_capabilities": obligations["required_capabilities"],
                 "required_evidence": obligations["required_evidence"], "selected_skills": obligations["selected_skills"],
                 "native_enforcement": obligations["native_enforcement"], "prohibited_actions": obligations["prohibited_actions"],
@@ -89,7 +102,13 @@ def run(args: argparse.Namespace) -> dict:
         write_json(root / args.output, att); return att
     if args.command == "readiness":
         obligations = load_json(root / args.obligations); evidence = load_attestations(root / args.evidence_dir)
-        result = verify_readiness(obligations, evidence, load_json(schemas_root() / "evidence.schema.json"), args.sha)
+        trust = None
+        if args.trust_index:
+            trust_path = Path(args.trust_index).resolve()
+            if trust_path == root or root in trust_path.parents:
+                raise ProcessError("trust index must come from an out-of-band verified transport outside the repository")
+            trust = load_json(trust_path).get("evidence", {})
+        result = verify_readiness(obligations, evidence, load_json(schemas_root() / "evidence.schema.json"), args.sha, trust)
         if not result["ready"]: raise ProcessError("readiness failed: " + json.dumps(result, sort_keys=True))
         return result
     if args.command == "sufficiency":

@@ -34,18 +34,15 @@ Or supply an immutable released revision explicitly with `--revision <40-hex-sha
 
 ```bash
 engineering-process classify \
-  --sha "$GITHUB_SHA" \
-  --path src/payments/refund.py \
+  --base "$BASE_SHA" --head "$GITHUB_SHA" \
   --declared '{"observable_behavior":true}'
 
 engineering-process evaluate \
-  --sha "$GITHUB_SHA" \
-  --path src/payments/refund.py \
+  --base "$BASE_SHA" --head "$GITHUB_SHA" \
   --declared '{"observable_behavior":true}'
 
 engineering-process explain \
-  --sha "$GITHUB_SHA" \
-  --path src/payments/refund.py \
+  --base "$BASE_SHA" --head "$GITHUB_SHA" \
   --declared '{"observable_behavior":true}'
 
 engineering-process attest --predicate test-result/v1 \
@@ -58,7 +55,7 @@ engineering-process validate
 engineering-process metrics --obligations .engineering/effective-obligations.json
 ```
 
-`classify` is monotonic: declarations may strengthen routing but may not defeat deterministic Protected signals. Unknown Protected characteristics fail closed. `readiness` rejects malformed, failed, contradictory, wrong-SHA, wrong-process-revision, and invalid fresh-context review evidence.
+Trusted classification derives the complete Git change set from exact `--base` and `--head` commits, including deletions and both rename paths. `--path` is untrusted and diagnostic-only. Classification is monotonic: declarations may strengthen routing but may not defeat deterministic Protected signals. Unknown Protected characteristics fail closed. `readiness` rejects malformed, failed, contradictory, wrong-repository, wrong-SHA, wrong-process-revision, unauthorized-producer, and invalid fresh-context review evidence. See the authoritative [evidence lifecycle](docs/evidence-lifecycle.md).
 
 ## Policy model
 

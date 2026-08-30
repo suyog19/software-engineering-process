@@ -1,0 +1,12 @@
+trust_levels: {asserted: 0, authenticated: 1, trusted: 2}
+predicates:
+  classification/v1: {producer_classes: [trusted-ci], minimum: {Lean: asserted, Standard: authenticated, Protected: trusted}}
+  test-result/v1: {producer_classes: [trusted-ci], minimum: {Lean: asserted, Standard: authenticated, Protected: trusted}}
+  ux-verdict/v1: {producer_classes: [authorized-human, authorized-agent], minimum: {Standard: authenticated, Protected: authenticated}}
+  architecture-decision/v1: {producer_classes: [authorized-human, authorized-agent], minimum: {Protected: authenticated}}
+  functional-qa-verdict/v1: {producer_classes: [authorized-human, authorized-agent, trusted-ci], minimum: {Standard: authenticated, Protected: authenticated}}
+  non-functional-qa-verdict/v1: {producer_classes: [authorized-human, authorized-agent, trusted-ci], minimum: {Protected: authenticated}}
+  independent-review/v1: {producer_classes: [authorized-human, authorized-agent], minimum: {Lean: asserted, Standard: authenticated, Protected: authenticated}}
+  solution-sufficiency/v1: {producer_classes: [authorized-human, authorized-agent], minimum: {Protected: authenticated}}
+  human-approval/v1: {producer_classes: [product-owner], minimum: {Protected: authenticated}}
+  deployment-release/v1: {producer_classes: [trusted-ci], minimum: {Protected: trusted}}

@@ -60,6 +60,27 @@ def test_wrong_process_revision_fails(tmp_path):
         validate_repository(tmp_path)
 
 
+def test_runtime_revision_must_match_lock(tmp_path):
+    initialize(tmp_path, "generic", "example/repo", REV)
+    assert validate_repository(tmp_path, REV)["runtime_revision"] == REV
+    with pytest.raises(ProcessError, match="runtime process revision mismatch"):
+        validate_repository(tmp_path, "c" * 40)
+
+
+@pytest.mark.parametrize("revision", ["main", "1.0.1", "abc"])
+def test_runtime_revision_rejects_floating_or_malformed_values(tmp_path, revision):
+    initialize(tmp_path, "generic", "example/repo", REV)
+    with pytest.raises(ProcessError, match="immutable 40-character"):
+        validate_repository(tmp_path, revision)
+
+
+def test_generated_workflow_installs_and_validates_same_exact_revision(tmp_path):
+    initialize(tmp_path, "generic", "example/repo", REV)
+    workflow = (tmp_path / ".github/workflows/process-validation.yml").read_text()
+    assert f"software-engineering-process@{REV}" in workflow
+    assert f"--runtime-revision '{REV}'" in workflow
+
+
 def test_manifest_drift_fails(tmp_path):
     initialize(tmp_path, "generic", "example/repo", REV)
     path = tmp_path / ".engineering/process.yaml"

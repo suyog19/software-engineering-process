@@ -12,4 +12,4 @@ jobs:
         with: {python-version: "3.12"}
       # Bootstrap replaces PROCESS_REVISION with the immutable process Git SHA.
       - run: pip install 'git+https://github.com/suyog19/software-engineering-process@PROCESS_REVISION'
-      - run: engineering-process validate
+      - run: engineering-process validate --runtime-revision 'PROCESS_REVISION'

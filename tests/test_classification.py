@@ -45,3 +45,12 @@ def test_repo_sensitive_hint_is_protected(manifest):
     manifest["overrides"] = {"classification": {"protected_path_hints": ["contracts/**"]}}
     assert classify(policy_root(), profile("generic"), manifest, ["contracts/a.txt"]).delivery_profile == "Protected"
 
+
+@pytest.mark.parametrize("path", [".github/workflows/ci.yml", ".engineering/process.yaml", "AGENTS.md"])
+def test_workflow_and_protected_context_changes_are_protected(manifest, path):
+    assert classify(policy_root(), profile("generic"), manifest, [path]).delivery_profile == "Protected"
+
+
+@pytest.mark.parametrize("path", ["package-lock.json", "services/api/requirements-dev.txt", "src/generated/client.py"])
+def test_dependencies_and_generated_changes_are_at_least_standard(manifest, path):
+    assert classify(policy_root(), profile("generic"), manifest, [path]).delivery_profile == "Standard"

@@ -9,6 +9,17 @@
 
 Repository-local technology is deliberately opaque to policy. Put commands under `overrides.validation.commands`; add sensitive paths/characteristics and domain triggers when they strengthen classification. Never copy the canonical policy into the manifest.
 
+## Locked process upgrades
+
+CI executes the immutable Git SHA in `.engineering/process.lock`, never a floating
+package, tag, or branch. Change it only through a reviewed
+`engineering-process upgrade --version VERSION --revision 40_HEX_SHA`. The
+upgrade refreshes the manifest, lock, generated workflow, and policy snapshot
+together. Missing, unavailable, floating, or inconsistent revisions fail closed.
+The initial checkout and runner are the bootstrap trust boundary. Evidence
+transport and v1 compatibility are defined in the [exact-revision evidence
+lifecycle](evidence-lifecycle.md).
+
 ## Production authority and independent review
 
 The human production boundary and independent review are separate controls. Every change still requires fresh-context, implementation-independent review evidence. Production authorization and promotion remain manual human actions, and automation or agents may not perform them. For an owner-controlled repository, the owner's explicit authorization and manual merge or promotion satisfy the human boundary; a second human GitHub reviewer is not implicitly required. Repositories with multiple authorized maintainers may configure a stronger branch or Environment reviewer gate.

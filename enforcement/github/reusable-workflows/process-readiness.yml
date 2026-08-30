@@ -13,7 +13,14 @@ jobs:
         with: {ref: "${{ inputs.target-sha }}", fetch-depth: 0}
       - uses: actions/setup-python@v5
         with: {python-version: "3.12"}
-      - run: pip install software-engineering-process
-      - run: engineering-process validate
+      - name: Resolve locked process revision
+        id: process
+        shell: bash
+        run: |
+          revision="$(python -c 'import json; print(json.load(open(".engineering/process.lock"))["revision"])')"
+          [[ "$revision" =~ ^[0-9a-f]{40}$ ]] || { echo 'invalid locked process revision' >&2; exit 2; }
+          echo "revision=$revision" >> "$GITHUB_OUTPUT"
+      - name: Install exact locked process revision
+        run: pip install 'git+https://github.com/suyog19/software-engineering-process@${{ steps.process.outputs.revision }}'
+      - run: engineering-process validate --runtime-revision '${{ steps.process.outputs.revision }}'
       - run: engineering-process readiness --sha "${{ inputs.target-sha }}"
-

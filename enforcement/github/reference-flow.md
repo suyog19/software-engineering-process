@@ -25,9 +25,12 @@ configured protected/default branch with `GITHUB_REF_PROTECTED=true`. A workflow
 SHA equal to the assessed target cannot bootstrap its own authorization; a
 reviewed authorization change affects later runs. `pull_request` is diagnostic
 only. `pull_request_target` and `workflow_dispatch` must use the protected base
-definition. `workflow_call` also requires `GITHUB_CALLER_WORKFLOW_REF`, with both
-caller and callee allowlisted. Fork review runs in the authorized base repository.
-Reruns bind both run ID and attempt.
+definition. For `workflow_call`, the exact called reusable-workflow identity in
+`GITHUB_WORKFLOW_REF` is the identity authorized here. GitHub resolves that
+workflow; caller authorization remains a repository ruleset/caller-permissions
+responsibility and is outside this adapter's trust claim. No undocumented caller
+environment variable is required. Fork review runs in the authorized base
+repository. Reruns bind both run ID and attempt.
 
 An independent reviewer runs `review-attest` from a protected review workflow
 after inspecting the objective artifact, then uploads

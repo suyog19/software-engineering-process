@@ -1,6 +1,9 @@
 from engineering_process.classification import classify
 from engineering_process.evaluation import evaluate
 from engineering_process.paths import policy_root
+from engineering_process.io import load_json
+from engineering_process.schema_validation import validate
+from engineering_process.paths import schemas_root
 from conftest import profile
 
 
@@ -66,3 +69,12 @@ def test_validation_categories_scale_by_delivery_profile(manifest):
     assert lean["required_validation_categories"] == ["focused"]
     assert standard["required_validation_categories"] == ["focused", "integration"]
     assert protected["required_validation_categories"] == ["focused", "integration", "negative", "security"]
+
+
+def test_effective_obligations_schema_validates_adapter_mapping(manifest):
+    manifest["adapters"] = {"github": {"protected_branch": "dev"}}
+    obligations = evaluate(policy_root(), manifest, classify(policy_root(), profile("generic"), manifest))
+    schema = load_json(schemas_root() / "effective-obligations.schema.json")
+    assert not validate(obligations, schema)
+    obligations["adapter_mapping"] = {"platform": "gitlab", "protected_branch": "dev"}
+    assert any("must equal 'github'" in error for error in validate(obligations, schema))

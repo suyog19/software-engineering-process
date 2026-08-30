@@ -37,6 +37,12 @@ display names, repository/ref-qualified values, and paths outside that directory
 with exact paths. Producers must expose the full workflow ref and protection
 state; reusable producers must also expose the caller workflow ref.
 
+Process 1.4.1 removes that caller-ref requirement because GitHub does not provide
+it as a default runner variable. Reusable workflows authorize the exact called
+workflow in `GITHUB_WORKFLOW_REF`; configure allowed callers with GitHub-native
+repository controls. Regenerate effective obligations so readiness receives the
+selected `adapter_mapping`, including any non-`main` protected branch.
+
 Optional `adapters.github_copilot.scoped_instructions` generate compact
 path-scoped `.github/instructions/*.instructions.md` files from canonical process
 identity and declared local-context paths. They are hash-locked and non-canonical.

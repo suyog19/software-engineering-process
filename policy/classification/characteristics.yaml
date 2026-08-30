@@ -1,6 +1,6 @@
 lean_hints: [typo, documentation_only, metadata_only, mechanical_test_only, established_css_only]
-standard: [observable_behavior, public_contract, user_journey, information_architecture, architecture, cross_service, state_transition, validation_or_error, performance, retry, concurrency, dependency_change, generated_change]
-protected: [financial_consequence, payment, payment_provider_trust, authentication, authorization, iam, privilege_or_trust, secrets, sensitive_data, production_controls, irreversible_data, infrastructure, refund_or_cancellation, learner_entitlement, sensitive_admin_action]
+standard: [observable_behavior, public_contract, user_journey, information_architecture, architecture, cross_service, state_transition, validation_or_error, performance, retry, concurrency, dependency_change, mechanical_lock_refresh, generated_change]
+protected: [financial_consequence, payment, payment_provider_trust, authentication, authorization, iam, privilege_or_trust, secrets, sensitive_data, production_controls, irreversible_data, infrastructure, refund_or_cancellation, learner_entitlement, sensitive_admin_action, dependency_trust_boundary]
 deterministic_files:
   - {pattern: "**/auth/**", characteristic: authentication}
   - {pattern: "**/iam/**", characteristic: iam}

@@ -1,0 +1,14 @@
+version: 1
+privacy:
+  optional: true
+  aggregate_by: [repository, workflow, change_characteristics, period]
+  prohibited_uses: [individual_ranking, employee_surveillance, lines_of_code_productivity]
+  retention_days: 180
+metrics:
+  flow: [issue_to_pr_seconds, implementation_seconds, end_to_end_seconds, abandonment_rate]
+  quality: [correction_cycles, post_merge_defects, substantial_rewrites]
+  stability: [ci_retries, reverts, failed_deployments]
+  review_burden: [review_seconds, review_cycles]
+  cost: [compute_seconds, token_cost]
+  complexity: [complexity_delta]
+  agent_effectiveness: [recommendation_outcome_alignment]

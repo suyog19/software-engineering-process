@@ -10,3 +10,4 @@ independent-review/v2: {capability: independent-review, passing_verdicts: [pass]
 solution-sufficiency/v1: {capability: solution-sufficiency, passing_verdicts: [sufficient]}
 human-approval/v1: {capability: product-owner, passing_verdicts: [approved]}
 deployment-release/v1: {capability: ci-automation, passing_verdicts: [pass]}
+dependency-validation/v1: {capability: ci-automation, passing_verdicts: [pass]}

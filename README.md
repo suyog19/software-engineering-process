@@ -58,6 +58,8 @@ Trusted classification derives the complete Git change set from exact `--base` a
 
 Phase 2 adds a locked [agent-execution security baseline](docs/agent-execution-security.md), a complete [GitHub reference flow](enforcement/github/reference-flow.md), executable `test-result/v2` validation basis, and structured `independent-review/v2` evidence. `explain` reports profile-aware validation categories and the execution boundary. Reference evidence travels through GitHub artifacts and out-of-band provenance rather than source commits.
 
+Phase 3 adds optional privacy-conscious outcome metrics, advisory task-delegation suitability independent of delivery profile, deterministic dependency assurance, and repository-context truth maintenance. See [adaptive assurance](docs/adaptive-assurance.md) and [delegation examples](docs/delegation-examples.md).
+
 ## Policy model
 
 - **Locked** controls cannot be changed locally (fresh-context independent review, fail-closed Protected routing, exact-revision evidence, secrets, traceability, human production boundary).

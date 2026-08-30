@@ -33,6 +33,11 @@
           "category": {"enum": ["operating_contract", "architecture", "ux_product_design", "deployment_release", "validation_testing", "security_domain", "other"]},
           "path": {"type": "string", "minLength": 1, "pattern": "^(?!/|[A-Za-z]:|.*(?:^|/)\\.\\.(?:/|$)).+"},
           "load_when": {"type": "string", "minLength": 1}
+          ,"owner": {"type": "string", "minLength": 1}
+          ,"criticality": {"enum": ["low", "medium", "high"]}
+          ,"verification": {"type": "object", "additionalProperties": false, "required": ["type", "target"], "properties": {"type": {"enum": ["command", "file", "link", "generated"]}, "target": {"type": "string", "minLength": 1}}}
+          ,"reviewed_at": {"type": "string"}
+          ,"review_cadence_days": {"type": "integer"}
         }
       }
     },
@@ -41,7 +46,7 @@
       "properties": {
         "technology": {"type": "object"},
         "validation": {"type": "object", "properties": {"commands": {"type": "array", "items": {"type": ["string", "object"]}}}},
-        "classification": {"type": "object", "properties": {"protected_path_hints": {"type": "array", "items": {"type": "string"}}, "additional_protected_characteristics": {"type": "array", "items": {"type": "string"}}}},
+        "classification": {"type": "object", "properties": {"protected_path_hints": {"type": "array", "items": {"type": "string"}}, "dependency_path_hints": {"type": "array", "items": {"type": "string"}}, "additional_protected_characteristics": {"type": "array", "items": {"type": "string"}}}},
         "ux": {"type": "object", "properties": {"additional_required_when": {"type": "array", "items": {"type": "string"}}}},
         "controls": {"type": "object"},
         "native_enforcement": {"type": "object"}

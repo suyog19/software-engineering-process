@@ -8,6 +8,7 @@ from pathlib import Path
 
 from .classification import classify
 from .git_changes import collect_changes
+from .dependencies import dependency_signals
 from .errors import ProcessError
 from .evaluation import evaluate
 from .evidence import load_attestations, make_attestation, verify_readiness
@@ -16,6 +17,8 @@ from .io import load_json, load_yaml, write_json
 from .paths import data_root, policy_root, schemas_root
 from .policy import load_policy
 from .render import metrics, render_files
+from .outcome_metrics import outcome_report, compare_outcomes
+from .delegation import assess_delegation
 from .repository import apply_upgrade, current_revision, initialize, upgrade_report
 from .sufficiency import triage
 from .validation import validate_repository
@@ -46,7 +49,8 @@ def _classification(args, root: Path, manifest: dict):
         if args.path:
             raise ProcessError("--path is untrusted diagnostic input and cannot be combined with trusted --base/--head classification")
         paths, changes = collect_changes(root, args.base, sha)
-        return classify(policy_root(), profile, manifest, paths, _json_arg(args.declared), _json_arg(args.semantic), args.rationale or "", sha, args.base, changes, "trusted-git-diff")
+        dep_chars, dep_signals = dependency_signals(root, args.base, sha, changes, manifest.get("overrides",{}).get("classification",{}).get("dependency_path_hints",[]))
+        return classify(policy_root(), profile, manifest, paths, _json_arg(args.declared), _json_arg(args.semantic), args.rationale or "", sha, args.base, changes, "trusted-git-diff", dep_chars, dep_signals)
     return classify(policy_root(), profile, manifest, args.path or [], _json_arg(args.declared), _json_arg(args.semantic), args.rationale or "", sha, input_trust="untrusted-manual")
 
 
@@ -60,7 +64,8 @@ def parser() -> argparse.ArgumentParser:
         c = sub.add_parser(name); c.add_argument("--path", action="append", help="untrusted diagnostic-only path"); c.add_argument("--declared"); c.add_argument("--semantic"); c.add_argument("--rationale"); c.add_argument("--sha"); c.add_argument("--base"); c.add_argument("--head")
         if name == "evaluate": c.add_argument("--output", default=".engineering/effective-obligations.json")
     sub.add_parser("render")
-    m = sub.add_parser("metrics"); m.add_argument("--obligations")
+    m = sub.add_parser("metrics"); m.add_argument("--obligations"); m.add_argument("--events"); m.add_argument("--baseline-events")
+    d = sub.add_parser("delegation"); d.add_argument("--inputs", required=True); d.add_argument("--human-choice")
     e = sub.add_parser("attest"); e.add_argument("--predicate", required=True); e.add_argument("--sha", required=True); e.add_argument("--capability", required=True); e.add_argument("--verdict", required=True); e.add_argument("--identity", required=True); e.add_argument("--context-id", required=True); e.add_argument("--implementation-context-id"); e.add_argument("--fresh-context", action="store_true"); e.add_argument("--output", required=True)
     tv = sub.add_parser("run-validation"); tv.add_argument("--sha", required=True); tv.add_argument("--obligations", default=".engineering/effective-obligations.json"); tv.add_argument("--output-dir", required=True)
     rv = sub.add_parser("review-attest"); rv.add_argument("--sha", required=True); rv.add_argument("--basis", required=True); rv.add_argument("--findings", required=True); rv.add_argument("--residual-risk"); rv.add_argument("--identity", required=True); rv.add_argument("--producer-class", required=True, choices=["authorized-human", "authorized-agent"]); rv.add_argument("--context-id", required=True); rv.add_argument("--implementation-context-id", required=True); rv.add_argument("--output-dir", required=True)
@@ -91,17 +96,23 @@ def run(args: argparse.Namespace) -> dict:
                 "process": manifest["process"], "change_characteristics": result.characteristics,
                 "deterministic_signals": result.deterministic_signals, "semantic_rationale": result.semantic_rationale,
                 "changed_path_explanations": result.path_explanations,
+                "dependency_signals": result.dependency_signals,
                 "why": result.reasons, "required_capabilities": obligations["required_capabilities"],
                 "required_evidence": obligations["required_evidence"], "selected_skills": obligations["selected_skills"],
                 "required_validation_categories": obligations["required_validation_categories"],
                 "agent_execution": obligations["agent_execution"],
+                "dependency_assurance": obligations["dependency_assurance"],
                 "native_enforcement": obligations["native_enforcement"], "prohibited_actions": obligations["prohibited_actions"],
                 "not_required": obligations["not_required"], "execution_boundary": obligations["execution_boundary"]}
     if args.command == "render":
         generated = render_files(root, manifest); return {"rendered": sorted(generated)}
     if args.command == "metrics":
+        if args.events:
+            current=load_json(root / args.events)
+            return compare_outcomes(load_json(root / args.baseline_events),current) if args.baseline_events else outcome_report(current)
         obligations = load_json(root / args.obligations) if args.obligations else None
         return metrics(root, obligations["selected_skills"] if obligations else [])
+    if args.command == "delegation": return assess_delegation(_json_arg(args.inputs), args.human_choice)
     if args.command == "attest":
         if args.predicate in {"test-result/v2", "independent-review/v2"}:
             raise ProcessError(f"{args.predicate} must be produced by its dedicated authenticated command")

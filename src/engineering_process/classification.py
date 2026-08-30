@@ -30,6 +30,7 @@ class Classification:
     change_set: list[dict] | None = None
     input_trust: str = "untrusted-manual"
     path_explanations: list[dict] | None = None
+    dependency_signals: list[dict] | None = None
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -51,11 +52,13 @@ def classify(
     base_revision: str = "",
     change_set: list[dict] | None = None,
     input_trust: str = "untrusted-manual",
+    derived: dict[str, bool | None] | None = None,
+    derived_signals: list[dict] | None = None,
 ) -> Classification:
     cfg = load_yaml(policy_root / "classification" / "characteristics.yaml")
     changed_paths = list(changed_paths)
     declared, semantic = declared or {}, semantic or {}
-    characteristics: dict[str, bool | None] = {**declared, **semantic}
+    characteristics: dict[str, bool | None] = {**declared, **semantic, **(derived or {})}
     rules = list(cfg["deterministic_files"])
     for pattern in profile.get("add", {}).get("protected_path_hints", []):
         rules.append({"pattern": pattern, "characteristic": "profile_protected_path"})
@@ -105,4 +108,4 @@ def classify(
         matched = sorted({signal.characteristic for signal in signals if signal.value == path})
         explanations.append({"path": path, "deterministic_characteristics": matched,
                              "effect": "matched deterministic rule(s)" if matched else "no deterministic rule matched"})
-    return Classification(target_revision, base_revision, delivery, characteristics, [asdict(s) for s in signals], semantic_rationale, reasons, bool(unresolved), change_set or [], input_trust, explanations)
+    return Classification(target_revision, base_revision, delivery, characteristics, [asdict(s) for s in signals], semantic_rationale, reasons, bool(unresolved), change_set or [], input_trust, explanations, derived_signals or [])

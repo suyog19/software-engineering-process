@@ -66,6 +66,15 @@ def evaluate(policy_root: Path, manifest: dict, classification: Classification) 
         "audit_sink": extensions.get("audit_sink"),
         "enforcement_ready": isolation_available if classification.delivery_profile == "Protected" else (sandbox_available if classification.delivery_profile == "Standard" else True),
     }
+    validation_categories = list(selected["required_validation_categories"])
+    dependency_assurance = None
+    if chars & {"dependency_change", "mechanical_lock_refresh", "dependency_trust_boundary"}:
+        if "integration" not in validation_categories: validation_categories.append("integration")
+        if "dependency_trust_boundary" in chars and "security" not in validation_categories: validation_categories.append("security")
+        dependency_assurance = {"registry_existence": True, "resolved_identity_and_version": True,
+            "deterministic_lock_update": True, "integrity_or_provenance": "required" if "dependency_trust_boundary" in chars else "when available",
+            "vulnerability_and_license_checks": True, "new_dependency_justification": "dependency_change" in chars,
+            "fail_on_unresolved_or_unpinned_high_risk_source": True}
     return {
         "process": manifest["process"],
         "repository": manifest["repository"],
@@ -79,7 +88,8 @@ def evaluate(policy_root: Path, manifest: dict, classification: Classification) 
         "human_production_boundary": controls["human_production_boundary"],
         "independent_review": controls["independent_review"],
         "validation_commands": controls["validation_commands"]["values"],
-        "required_validation_categories": selected["required_validation_categories"],
+        "required_validation_categories": validation_categories,
+        "dependency_assurance": dependency_assurance,
         "agent_execution": agent_execution,
         "not_required": sorted(all_caps - capabilities),
         "execution_boundary": "Policy defines WHAT; assistants, humans, CI and native controls own HOW.",

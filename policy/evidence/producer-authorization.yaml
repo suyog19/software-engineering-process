@@ -12,3 +12,4 @@ predicates:
   solution-sufficiency/v1: {producer_classes: [authorized-human, authorized-agent], minimum: {Protected: authenticated}}
   human-approval/v1: {producer_classes: [product-owner], minimum: {Protected: authenticated}}
   deployment-release/v1: {producer_classes: [trusted-ci], minimum: {Protected: trusted}}
+  dependency-validation/v1: {producer_classes: [trusted-ci], minimum: {Lean: trusted, Standard: trusted, Protected: trusted}}

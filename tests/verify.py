@@ -20,7 +20,7 @@ REV, SHA = "a" * 40, "b" * 40
 
 
 def manifest(profile="generic"):
-    return {"schema_version": 1, "process": {"source": "suyog19/software-engineering-process", "version": "1.1.0", "revision": REV, "profile": profile}, "repository": {"name": "example/repo"}, "overrides": {"agent_execution": {"sandbox": "ephemeral-vm", "network_enforcement": "firewall", "audit_sink": "test-audit"}}}
+    return {"schema_version": 1, "process": {"source": "suyog19/software-engineering-process", "version": "1.2.0", "revision": REV, "profile": profile}, "repository": {"name": "example/repo"}, "overrides": {"agent_execution": {"sandbox": "ephemeral-vm", "network_enforcement": "firewall", "audit_sink": "test-audit"}}}
 
 
 def prof(name): return load_policy(policy_root(), name)[1]
@@ -70,8 +70,8 @@ def main():
     def upgrade():
         with tempfile.TemporaryDirectory() as td:
             root=Path(td); initialize(root,"backend","example/api",REV)
-            dry=upgrade_report(root,"1.1.0","c"*40); assert "inherited_rule_changes" in dry and dry["proposed"]["revision"] == "c"*40
-            apply_upgrade(root,"1.1.0","c"*40); assert validate_repository(root)["revision"] == "c"*40
+            dry=upgrade_report(root,"1.2.0","c"*40); assert "inherited_rule_changes" in dry and dry["proposed"]["revision"] == "c"*40
+            apply_upgrade(root,"1.2.0","c"*40); assert validate_repository(root)["revision"] == "c"*40
     check("controlled process upgrade", upgrade)
     print(f"{len(checks)} acceptance checks passed")
 

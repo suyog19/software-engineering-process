@@ -13,12 +13,15 @@ SHA, REV = "a" * 40, "b" * 40
 def setup(repository="org/repo"):
     att = make_attestation(repository, SHA, "test-result/v1", "1.1.0", REV,
                            "ci-automation", "pass", "actions", "run")
-    obligations = {"repository": {"name": "org/repo"}, "process": {"revision": REV},
+    obligations = {"repository": {"name": "org/repo", "trusted_ci_workflows": [".github/workflows/process.yml"]}, "process": {"revision": REV},
                    "classification": {"target_revision": SHA, "delivery_profile": "Protected"},
                    "required_evidence": ["test-result/v1"]}
     record = {"trust_level": "trusted", "authorization": "verified", "repository": "org/repo",
               "target_revision": SHA, "producer_class": "trusted-ci", "capability": "ci-automation",
-              "platform": "github", "workflow": ".github/workflows/process.yml", "run_id": "1", "job": "test"}
+              "platform": "github", "workflow_repository": "org/repo",
+              "workflow_path": ".github/workflows/process.yml", "workflow_ref": "refs/heads/main",
+              "run_id": "1", "run_attempt": "1", "job": "test", "event": "workflow_dispatch",
+              "ref_protected": True}
     return att, obligations, record
 
 
@@ -42,7 +45,7 @@ def test_verified_github_identity_satisfies_protected_objective_evidence():
     ({"repository": "other/repo"}, "wrong repository"),
     ({"producer_class": "authorized-agent"}, "unauthorized producer"),
     ({"authorization": "denied"}, "not verified"),
-    ({"workflow": ""}, "workflow/run/job"),
+    ({"workflow_path": ""}, "workflow/run/job"),
     ({"fork": True}, "fork evidence"),
 ])
 def test_impersonation_replay_wrong_workflow_and_capability_fail(mutation, message):

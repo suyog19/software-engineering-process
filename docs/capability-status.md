@@ -1,6 +1,6 @@
 # Capability status
 
-Current process release: **1.3.0**.
+Current process release: **1.4.0**.
 
 Status terms: **implemented** is executable and tested; **partial** works with stated prerequisites/limits; **experimental** is usable but compatibility may change; **designed** has an accepted contract but no complete implementation; **deferred** is intentionally postponed with tracked rationale. Material implementation and release changes must update this matrix.
 
@@ -8,7 +8,7 @@ Status terms: **implemented** is executable and tested; **partial** works with s
 |---|---|---|
 | Locked policy inheritance and upgrades | implemented | Immutable Git revision and reviewed upgrade required. |
 | Trusted Git classification | implemented | Full Git history/base must be available. |
-| Exact-SHA evidence and producer trust | implemented | Standard/Protected require out-of-band platform provenance. |
+| Exact-SHA evidence and producer trust | implemented | GitHub provenance uses exact repository/workflow/ref identity; Standard/Protected require out-of-band platform provenance. |
 | Agent-execution security | partial | Policy and GitHub mapping implemented; adopters supply native sandbox/egress enforcement. |
 | End-to-end GitHub reference flow | implemented | Repository configures authorized workflow refs and review Environment. |
 | Outcome metrics | experimental | Optional repository aggregation; completeness depends on supplied events. |

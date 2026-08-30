@@ -12,7 +12,7 @@ SHA = "b" * 40
 
 @pytest.fixture
 def manifest():
-    return {"schema_version": 1, "process": {"source": "suyog19/software-engineering-process", "version": "1.3.0", "revision": REV, "profile": "generic"}, "repository": {"name": "example/repo", "trusted_ci_workflows": [".github/workflows/assurance.yml"], "authorized_review_workflows": [".github/workflows/assurance.yml"]}, "overrides": {"agent_execution": {"sandbox": "ephemeral-vm", "network_enforcement": "firewall", "audit_sink": "test-audit"}}}
+    return {"schema_version": 1, "process": {"source": "suyog19/software-engineering-process", "version": "1.4.0", "revision": REV, "profile": "generic"}, "repository": {"name": "example/repo", "trusted_ci_workflows": [".github/workflows/assurance.yml"], "authorized_review_workflows": [".github/workflows/assurance.yml"]}, "overrides": {"agent_execution": {"sandbox": "ephemeral-vm", "network_enforcement": "firewall", "audit_sink": "test-audit"}}}
 
 
 def profile(name):

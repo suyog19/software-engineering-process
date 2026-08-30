@@ -32,8 +32,9 @@ def test_exact_head_to_readiness_reference_flow(tmp_path, manifest, monkeypatch)
     obligations = evaluate(policy_root(), manifest, classification)
     assert obligations["classification"]["input_trust"] == "trusted-git-diff"
 
-    for key, value in {"GITHUB_ACTIONS": "true", "GITHUB_WORKFLOW_REF": ".github/workflows/assurance.yml@refs/heads/main",
-                       "GITHUB_RUN_ID": "77", "GITHUB_RUN_ATTEMPT": "1", "GITHUB_JOB": "test"}.items():
+    for key, value in {"GITHUB_ACTIONS": "true", "GITHUB_WORKFLOW_REF": "example/repo/.github/workflows/assurance.yml@refs/heads/main",
+                       "GITHUB_RUN_ID": "77", "GITHUB_RUN_ATTEMPT": "1", "GITHUB_JOB": "test",
+                       "GITHUB_EVENT_NAME": "workflow_dispatch", "GITHUB_REF_PROTECTED": "true"}.items():
         monkeypatch.setenv(key, value)
     test_evidence, test_trust = generate_test_result(tmp_path, manifest, obligations, head, tmp_path / "objective")
     classification_evidence = make_attestation(manifest["repository"]["name"], head, "classification/v1",

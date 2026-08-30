@@ -14,10 +14,20 @@ negative, and security validation, the remaining policy predicates, an
 egress-enforced sandbox/audit sink, and manual owner production authorization.
 The reference workflow never merges or deploys.
 
-Declare the caller workflow paths in `repository.trusted_ci_workflows` and
-`repository.authorized_review_workflows`. The evidence producers compare the
-actual GitHub workflow ref with these protected repository-policy allowlists;
-an arbitrary workflow cannot label its output trusted.
+Declare exact repository-relative YAML paths below `.github/workflows/` in
+`repository.trusted_ci_workflows` and `repository.authorized_review_workflows`.
+The adapter parses `GITHUB_WORKFLOW_REF` as `owner/repository/path@ref`, requires
+the manifest repository, and compares normalized paths for equality. Display
+names, fragments, traversal, other repositories, and feature refs fail closed.
+
+A ref is trusted only when it is an immutable 40-character commit SHA, or the
+configured protected/default branch with `GITHUB_REF_PROTECTED=true`. A workflow
+SHA equal to the assessed target cannot bootstrap its own authorization; a
+reviewed authorization change affects later runs. `pull_request` is diagnostic
+only. `pull_request_target` and `workflow_dispatch` must use the protected base
+definition. `workflow_call` also requires `GITHUB_CALLER_WORKFLOW_REF`, with both
+caller and callee allowlisted. Fork review runs in the authorized base repository.
+Reruns bind both run ID and attempt.
 
 An independent reviewer runs `review-attest` from a protected review workflow
 after inspecting the objective artifact, then uploads

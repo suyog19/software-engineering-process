@@ -20,8 +20,9 @@ def make_test_att(commands=None, runs=None, skipped=None, retries=None):
                             "actions", "run:test", extra={"validation": {
                                 "commands": commands, "runs": runs,
                                 "runner": {"os": "Linux", "architecture": "x64", "image": "ubuntu"},
-                                "workflow": {"workflow": ".github/workflows/assurance.yml@refs/heads/main",
-                                             "runId": "10", "runAttempt": "1", "job": "test"},
+                                "workflow": {"repository": "org/repo", "workflow_path": ".github/workflows/assurance.yml",
+                                             "workflow_ref": "refs/heads/main", "run_id": "10",
+                                             "run_attempt": "1", "job": "test"},
                                 "environment": {"python": "3.12"}, "complete": True,
                                 "skipped": skipped or [], "retries": retries or [],
                                 "flakiness": {"detected": False, "signals": []}}})
@@ -43,7 +44,8 @@ def review_att(test_id, **overrides):
 
 
 def obligations(required):
-    return {"repository": {"name": "org/repo"}, "process": {"revision": REV},
+    return {"repository": {"name": "org/repo", "trusted_ci_workflows": [".github/workflows/assurance.yml"],
+                           "authorized_review_workflows": [".github/workflows/assurance.yml"]}, "process": {"revision": REV},
             "classification": {"target_revision": SHA, "base_revision": BASE, "delivery_profile": "Lean"},
             "validation_commands": [{"command": "pytest -q", "category": "focused"}],
             "required_validation_categories": ["focused"], "required_evidence": required}
@@ -51,8 +53,10 @@ def obligations(required):
 
 def records(test, review=None):
     workflow = {"authorization": "verified", "repository": "org/repo", "target_revision": SHA,
-                "platform": "github", "workflow": ".github/workflows/assurance.yml@refs/heads/main",
-                "run_id": "10", "job": "test"}
+                "platform": "github", "workflow_repository": "org/repo",
+                "workflow_path": ".github/workflows/assurance.yml", "workflow_ref": "refs/heads/main",
+                "run_id": "10", "run_attempt": "1", "job": "test", "event": "workflow_dispatch",
+                "ref_protected": True}
     result = {evidence_id(test): {**workflow, "trust_level": "trusted", "producer_class": "trusted-ci",
                                  "capability": "ci-automation", "artifact_digests": {"pytest.log": "d" * 64}}}
     if review:
@@ -95,8 +99,8 @@ def test_qualified_failed_run_is_valid_evidence_but_blocks_readiness():
     att["predicate"]["validation"]["runs"][0]["exitCode"] = 1
     result = verify_readiness(obligations(["test-result/v2"]), [att], SCHEMA, SHA, records(att))
     assert not result["ready"] and result["failed"] == ["test-result/v2"]
-    trust = records(att); trust[evidence_id(att)]["workflow"] = "wrong.yml"
-    with pytest.raises(ProcessError, match="workflow identity"):
+    trust = records(att); trust[evidence_id(att)]["workflow_ref"] = "refs/heads/wrong"
+    with pytest.raises(ProcessError, match="workflow ref"):
         verify_readiness(obligations(["test-result/v2"]), [att], SCHEMA, SHA, trust)
 
 

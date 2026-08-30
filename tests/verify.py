@@ -70,8 +70,8 @@ def main():
     def upgrade():
         with tempfile.TemporaryDirectory() as td:
             root=Path(td); initialize(root,"backend","example/api",REV)
-            dry=upgrade_report(root,"1.3.0","c"*40); assert "inherited_rule_changes" in dry and dry["proposed"]["revision"] == "c"*40
-            apply_upgrade(root,"1.3.0","c"*40); assert validate_repository(root)["revision"] == "c"*40
+            dry=upgrade_report(root,"1.4.0","c"*40); assert "inherited_rule_changes" in dry and dry["proposed"]["revision"] == "c"*40
+            apply_upgrade(root,"1.4.0","c"*40); assert validate_repository(root)["revision"] == "c"*40
     check("controlled process upgrade", upgrade)
     print(f"{len(checks)} acceptance checks passed")
 

@@ -25,7 +25,9 @@ post-merge evidence and is retained separately from the readiness join.
 status comes only from a verified transport index outside the checkout. It maps
 each evidence content digest to repository, target revision, capability,
 producer class, and platform identity. GitHub records also carry workflow,
-run/attempt, and job identity. Repository-authored producer fields cannot elevate
+workflow repository, normalized path, ref, run/attempt, and job identity.
+Readiness rechecks those fields against resolved repository policy.
+Repository-authored producer fields cannot elevate
 evidence.
 
 ## Ordering, invalidation, and recovery
@@ -78,3 +80,8 @@ updates the manifest, lock, generated workflow and snapshot together. Generated
 and reusable workflows install the exact 40-character lock SHA and pass it back
 to validation. Missing, floating, unavailable, or mismatched revisions fail.
 The initial checkout, Git host, and action runner are bootstrap trust assumptions.
+
+Version 1.4.0 removes free-form and substring GitHub workflow authorization.
+Adopters keep exact `.github/workflows/*.yml` allowlist paths, provide the full
+GitHub workflow ref and protected-ref state, and provide the caller workflow ref
+for reusable workflows. Ambiguous legacy values fail with migration diagnostics.

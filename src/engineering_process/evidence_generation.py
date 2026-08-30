@@ -71,11 +71,6 @@ def _workflow_identity(manifest: dict, target_sha: str) -> dict:
         raise ProcessError(f"pull_request workflow content is not trusted; permitted ref rule: {permitted}")
     if immutable and parsed["workflow_ref"] == target_sha:
         raise ProcessError("a target revision cannot bootstrap trust from its own workflow revision; approve the trust change for subsequent runs")
-    if event == "workflow_call":
-        caller = _parse_workflow_ref(os.environ.get("GITHUB_CALLER_WORKFLOW_REF"))
-        if caller["repository"].lower() != str(expected).lower():
-            raise ProcessError("workflow_call caller repository does not match the configured repository")
-        required["caller"] = caller
     if not (immutable or protected_default):
         raise ProcessError(f"unauthorized workflow ref {parsed['workflow_ref']!r}; permitted ref rule: {permitted}")
     return required
@@ -87,8 +82,7 @@ def _require_authorized_workflow(manifest: dict, workflow: dict, key: str) -> No
         normalized = [_normalized_workflow_path(path) for path in allowed]
     except (ProcessError, TypeError) as exc:
         raise ProcessError(f"ambiguous legacy configuration for {key}; use exact .github/workflows/*.yml paths: {exc}") from exc
-    identities = [workflow] + ([workflow["caller"]] if "caller" in workflow else [])
-    rejected = [identity["workflow_path"] for identity in identities if identity["workflow_path"] not in normalized]
+    rejected = [workflow["workflow_path"]] if workflow["workflow_path"] not in normalized else []
     if not normalized or rejected:
         raise ProcessError(f"GitHub workflow is not authorized for {key}: repository={workflow['repository']!r}; "
                            f"workflow_path={workflow['workflow_path']!r}; workflow_ref={workflow['workflow_ref']!r}; "

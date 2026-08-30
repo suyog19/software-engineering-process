@@ -1,6 +1,6 @@
 # Capability status
 
-Current process release: **1.4.0**.
+Current process release: **1.4.1**.
 
 Status terms: **implemented** is executable and tested; **partial** works with stated prerequisites/limits; **experimental** is usable but compatibility may change; **designed** has an accepted contract but no complete implementation; **deferred** is intentionally postponed with tracked rationale. Material implementation and release changes must update this matrix.
 

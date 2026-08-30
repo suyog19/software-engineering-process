@@ -56,15 +56,15 @@ def test_upgrade_removes_only_hash_locked_optional_adapter(tmp_path):
     initialize(tmp_path,"generic","example/repo",REV)
     mp=tmp_path/".engineering/process.yaml"; m=load_yaml(mp)
     m["adapters"]["github_copilot"]={"scoped_instructions":[{"name":"api","apply_to":"src/api/**","context_paths":[]}]}
-    mp.write_text(yaml.safe_dump(m,sort_keys=False)); apply_upgrade(tmp_path,"1.4.0","c"*40)
+    mp.write_text(yaml.safe_dump(m,sort_keys=False)); apply_upgrade(tmp_path,"1.4.1","c"*40)
     scoped=tmp_path/".github/instructions/api.instructions.md"; assert scoped.exists()
     m=load_yaml(mp); del m["adapters"]["github_copilot"]; mp.write_text(yaml.safe_dump(m,sort_keys=False))
-    result=apply_upgrade(tmp_path,"1.4.0","d"*40); assert not scoped.exists() and result["removed_generated_adapters"]==[".github/instructions/api.instructions.md"]
+    result=apply_upgrade(tmp_path,"1.4.1","d"*40); assert not scoped.exists() and result["removed_generated_adapters"]==[".github/instructions/api.instructions.md"]
 
 def test_upgrade_migrates_v1_manifest_to_strict_v2(tmp_path):
     initialize(tmp_path,"generic","example/repo",REV)
     mp=tmp_path/".engineering/process.yaml"; m=load_yaml(mp); m["schema_version"]=1; m.pop("adoption"); m.pop("adapters"); m["overrides"]["technology"]={"runtime":"python"}; mp.write_text(yaml.safe_dump(m,sort_keys=False))
-    result=apply_upgrade(tmp_path,"1.4.0","e"*40); migrated=load_yaml(mp)
+    result=apply_upgrade(tmp_path,"1.4.1","e"*40); migrated=load_yaml(mp)
     assert result["schema_migration"]=="v1->v2" and migrated["schema_version"]==2
     assert migrated["overrides"]["extensions"][0]["namespace"]=="legacy/technology" and migrated["adapters"]["github"]
 
@@ -72,11 +72,11 @@ def test_scoped_adapter_manual_drift_is_detected(tmp_path):
     initialize(tmp_path,"generic","example/repo",REV)
     mp=tmp_path/".engineering/process.yaml"; m=load_yaml(mp)
     m["adapters"]["github_copilot"]={"scoped_instructions":[{"name":"api","apply_to":"src/api/**","context_paths":[]}]}; mp.write_text(yaml.safe_dump(m,sort_keys=False))
-    apply_upgrade(tmp_path,"1.4.0","f"*40); scoped=tmp_path/".github/instructions/api.instructions.md"; scoped.write_text("manual")
+    apply_upgrade(tmp_path,"1.4.1","f"*40); scoped=tmp_path/".github/instructions/api.instructions.md"; scoped.write_text("manual")
     with pytest.raises(ProcessError,match="generated-file drift"): validate_repository(tmp_path)
 
 def test_capability_status_is_prominent_and_terms_complete():
     readme=Path("README.md").read_text(); status=Path("docs/capability-status.md").read_text()
     assert "capability status" in readme.lower()
     for term in ("implemented","partial","experimental","designed","deferred"): assert f"**{term}**" in status
-    assert "Current process release: **1.4.0**" in status
+    assert "Current process release: **1.4.1**" in status

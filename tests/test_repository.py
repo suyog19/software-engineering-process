@@ -141,10 +141,10 @@ def test_upgrade_preserves_local_context_and_reports_adapter_changes(tmp_path):
     (tmp_path / "AGENTS.md").write_text("local workflow", encoding="utf-8")
     initialize(tmp_path, "frontend", "example/web", REV, adopt_existing_context=True)
     context_path = tmp_path / "docs/engineering/local-context/agents-legacy.md"
-    report = upgrade_report(tmp_path, "1.4.0", "c" * 40)
+    report = upgrade_report(tmp_path, "1.4.1", "c" * 40)
     assert report["preserved_local_context"] == ["docs/engineering/local-context/agents-legacy.md"]
     assert {item["path"] for item in report["generated_files_change"]} >= {"AGENTS.md", "CLAUDE.md"}
-    apply_upgrade(tmp_path, "1.4.0", "c" * 40)
+    apply_upgrade(tmp_path, "1.4.1", "c" * 40)
     assert context_path.read_text(encoding="utf-8") == "local workflow"
     assert "c" * 40 in (tmp_path / ".github/workflows/process-validation.yml").read_text(encoding="utf-8")
     lock = load_json(tmp_path / ".engineering/process.lock")
@@ -156,7 +156,7 @@ def test_upgrade_refuses_modified_generated_file(tmp_path):
     initialize(tmp_path, "generic", "example/repo", REV)
     (tmp_path / "AGENTS.md").write_text("repository modification", encoding="utf-8")
     with pytest.raises(ProcessError, match="refusing to overwrite"):
-        apply_upgrade(tmp_path, "1.4.0", "c" * 40)
+        apply_upgrade(tmp_path, "1.4.1", "c" * 40)
 
 
 def test_init_refuses_repository_owned_workflow_without_partial_state(tmp_path):

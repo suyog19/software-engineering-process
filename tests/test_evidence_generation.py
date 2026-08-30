@@ -110,6 +110,17 @@ def test_display_name_is_never_an_authorization_fallback(tmp_path, manifest, mon
         generate_test_result(tmp_path, manifest, {}, "b" * 40, tmp_path / "display")
 
 
+def test_reference_workflow_call_uses_called_workflow_identity_without_hidden_caller_variable(tmp_path, manifest, monkeypatch):
+    github_env(monkeypatch)
+    monkeypatch.setenv("GITHUB_EVENT_NAME", "workflow_call")
+    monkeypatch.delenv("GITHUB_CALLER_WORKFLOW_REF", raising=False)
+    commands = ["python -c \"print('ok')\""]
+    manifest["overrides"]["validation"] = {"commands": commands}
+    _, trust = generate_test_result(tmp_path, manifest, {"required_validation_categories": ["focused"],
+        "validation_commands": commands}, "b" * 40, tmp_path / "workflow-call")
+    assert next(iter(trust.values()))["event"] == "workflow_call"
+
+
 def test_command_start_failure_is_recorded_as_failed_evidence(tmp_path, manifest, monkeypatch):
     github_env(monkeypatch)
     commands = [{"command": "definitely-not-a-real-executable", "category": "focused"}]

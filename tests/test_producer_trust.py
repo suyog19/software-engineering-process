@@ -61,6 +61,22 @@ def test_expired_provenance_requires_rerun():
         verify(att, obligations, record)
 
 
+@pytest.mark.parametrize("branch", ["dev", "release"])
+def test_readiness_uses_resolved_non_main_protected_branch(branch):
+    att, obligations, record = setup()
+    obligations["adapter_mapping"] = {"platform": "github", "protected_branch": branch}
+    record["workflow_ref"] = f"refs/heads/{branch}"
+    assert verify(att, obligations, record)["ready"]
+
+
+@pytest.mark.parametrize("mapping", [{"platform": "gitlab"}, {"platform": "github", "protected_branch": ""}, "github"])
+def test_malformed_adapter_mapping_fails_closed(mapping):
+    att, obligations, record = setup()
+    obligations["adapter_mapping"] = mapping
+    with pytest.raises(ProcessError, match="adapter_mapping"):
+        verify(att, obligations, record)
+
+
 def test_wrong_subject_repository_is_rejected_even_for_asserted_evidence():
     att, obligations, _ = setup("other/repo")
     obligations["classification"]["delivery_profile"] = "Lean"

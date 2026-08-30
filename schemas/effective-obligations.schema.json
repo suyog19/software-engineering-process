@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema", "type": "object",
-  "required": ["process", "repository", "classification", "required_capabilities", "required_evidence", "selected_skills", "native_enforcement", "prohibited_actions"],
+  "required": ["process", "repository", "classification", "required_capabilities", "required_evidence", "selected_skills", "native_enforcement", "prohibited_actions", "adapter_mapping"],
   "properties": {
     "process": {"type": "object"}, "repository": {"type": "object"}, "classification": {"type": "object"},
     "required_capabilities": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
@@ -8,7 +8,10 @@
     "selected_skills": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
     "approvals": {"type": "array", "items": {"type": "string"}},
     "native_enforcement": {"type": "object"}, "prohibited_actions": {"type": "array", "items": {"type": "string"}},
+    "adapter_mapping": {"type": ["object", "null"], "additionalProperties": false,
+      "required": ["platform"], "properties": {"platform": {"const": "github"},
+        "readiness_status": {"type": "string"}, "protected_branch": {"type": "string", "minLength": 1},
+        "production_environment": {"type": "string"}, "runner_labels": {"type": "array", "items": {"type": "string"}}}},
     "not_required": {"type": "array", "items": {"type": "string"}}
   }
 }
-

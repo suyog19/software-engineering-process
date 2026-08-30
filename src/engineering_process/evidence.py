@@ -175,7 +175,15 @@ def verify_readiness(obligations: dict, attestations: Iterable[dict], schema: di
                 allowed_key = "trusted_ci_workflows" if record.get("producer_class") == "trusted-ci" else "authorized_review_workflows"
                 if record["workflow_repository"].lower() != str(repository).lower() or record["workflow_path"] not in repo.get(allowed_key, []):
                     raise ProcessError("GitHub provenance workflow identity is not authorized by resolved repository policy")
-                protected_branch = obligations.get("adapters", {}).get("github", {}).get("protected_branch", "main")
+                mapping = obligations.get("adapter_mapping")
+                if mapping is None:
+                    protected_branch = "main"
+                elif not isinstance(mapping, dict) or mapping.get("platform") != "github":
+                    raise ProcessError("GitHub provenance requires a valid GitHub adapter_mapping")
+                else:
+                    protected_branch = mapping.get("protected_branch", "main")
+                    if not isinstance(protected_branch, str) or not protected_branch.strip():
+                        raise ProcessError("GitHub adapter_mapping protected_branch must be a non-empty string")
                 workflow_ref = record["workflow_ref"]
                 immutable = len(workflow_ref) == 40 and all(char in "0123456789abcdef" for char in workflow_ref)
                 protected_default = workflow_ref == f"refs/heads/{protected_branch}" and record.get("ref_protected") is True

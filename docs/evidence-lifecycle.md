@@ -85,3 +85,9 @@ Version 1.4.0 removes free-form and substring GitHub workflow authorization.
 Adopters keep exact `.github/workflows/*.yml` allowlist paths, provide the full
 GitHub workflow ref and protected-ref state, and provide the caller workflow ref
 for reusable workflows. Ambiguous legacy values fail with migration diagnostics.
+
+Version 1.4.1 corrects the reusable-workflow and protected-branch integration.
+Reusable calls authorize GitHub's exact called-workflow ref; caller permission is
+delegated to GitHub and repository-native controls rather than claimed as
+independently verified. Readiness consumes the serialized `adapter_mapping`, so a
+configured non-`main` protected branch is identical at production and join time.

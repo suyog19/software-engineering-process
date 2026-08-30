@@ -1,3 +1,4 @@
+import json
 import subprocess
 
 from engineering_process.classification import classify
@@ -69,3 +70,26 @@ def test_reference_workflows_use_exact_sha_artifacts_and_no_production_authority
     assert "engineering-process readiness" in assurance
     assert "environment: independent-review" in review
     assert "deploy" not in assurance.lower() and "contents: write" not in assurance.lower()
+    assert "GITHUB_CALLER_WORKFLOW_REF" not in assurance
+
+
+def test_non_main_branch_survives_evaluate_serialization_and_readiness(tmp_path, manifest, monkeypatch):
+    manifest["adapters"] = {"github": {"protected_branch": "dev"}}
+    manifest["overrides"]["validation"] = {"commands": [{"command": "python -c \"print('ok')\"", "category": "focused"}]}
+    classified = classify(policy_root(), profile("generic"), manifest, declared={"typo": True}, target_revision="b" * 40)
+    obligations = evaluate(policy_root(), manifest, classified)
+    obligations = json.loads(json.dumps(obligations))
+    obligations["required_evidence"] = ["test-result/v2"]
+    for key, value in {"GITHUB_ACTIONS": "true",
+        "GITHUB_WORKFLOW_REF": "example/repo/.github/workflows/assurance.yml@refs/heads/dev",
+        "GITHUB_RUN_ID": "88", "GITHUB_RUN_ATTEMPT": "2", "GITHUB_JOB": "test",
+        "GITHUB_EVENT_NAME": "workflow_call", "GITHUB_REF_PROTECTED": "true"}.items():
+        monkeypatch.setenv(key, value)
+    evidence, trust = generate_test_result(tmp_path, manifest, obligations, "b" * 40, tmp_path / "dev")
+    result = verify_readiness(obligations, [evidence], load_json(schemas_root() / "evidence.schema.json"), "b" * 40, trust)
+    assert result["ready"] and obligations["adapter_mapping"]["protected_branch"] == "dev"
+    obligations["adapter_mapping"]["protected_branch"] = "release"
+    import pytest
+    from engineering_process.errors import ProcessError
+    with pytest.raises(ProcessError, match="trusted-ref rule"):
+        verify_readiness(obligations, [evidence], load_json(schemas_root() / "evidence.schema.json"), "b" * 40, trust)

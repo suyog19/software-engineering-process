@@ -31,6 +31,12 @@ the versioned GitHub adapter selects status names, branches, environments, and
 runner labels. Stronger local controls remain valid; locked-control weakening is
 still rejected.
 
+Process 1.4.0 hardens GitHub evidence authorization. Exact
+`.github/workflows/*.yml` allowlists need no schema change. Replace fragments,
+display names, repository/ref-qualified values, and paths outside that directory
+with exact paths. Producers must expose the full workflow ref and protection
+state; reusable producers must also expose the caller workflow ref.
+
 Optional `adapters.github_copilot.scoped_instructions` generate compact
 path-scoped `.github/instructions/*.instructions.md` files from canonical process
 identity and declared local-context paths. They are hash-locked and non-canonical.

@@ -168,8 +168,19 @@ def verify_readiness(obligations: dict, attestations: Iterable[dict], schema: di
                 raise ProcessError(f"unauthorized producer class for {key}")
             if record.get("capability") != attestation["predicate"]["capability"]:
                 raise ProcessError(f"authenticated producer lacks capability for {key}")
-            if record.get("platform") == "github" and not all(record.get(k) for k in ("workflow", "run_id", "job")):
+            if record.get("platform") == "github" and not all(record.get(k) for k in ("workflow_repository", "workflow_path", "workflow_ref", "run_id", "run_attempt", "job")):
                 raise ProcessError("GitHub evidence is missing workflow/run/job identity")
+            if record.get("platform") == "github":
+                repo = obligations.get("repository", {})
+                allowed_key = "trusted_ci_workflows" if record.get("producer_class") == "trusted-ci" else "authorized_review_workflows"
+                if record["workflow_repository"].lower() != str(repository).lower() or record["workflow_path"] not in repo.get(allowed_key, []):
+                    raise ProcessError("GitHub provenance workflow identity is not authorized by resolved repository policy")
+                protected_branch = obligations.get("adapters", {}).get("github", {}).get("protected_branch", "main")
+                workflow_ref = record["workflow_ref"]
+                immutable = len(workflow_ref) == 40 and all(char in "0123456789abcdef" for char in workflow_ref)
+                protected_default = workflow_ref == f"refs/heads/{protected_branch}" and record.get("ref_protected") is True
+                if record.get("event") == "pull_request" or not (immutable or protected_default) or (immutable and workflow_ref == sha):
+                    raise ProcessError("GitHub provenance workflow ref is not authorized by the trusted-ref rule")
             if record.get("fork") and not record.get("base_repository_authorized"):
                 raise ProcessError("fork evidence was not authorized by the base repository")
             expires = record.get("expires_at")
@@ -190,7 +201,12 @@ def verify_readiness(obligations: dict, attestations: Iterable[dict], schema: di
                 raise ProcessError("test evidence is missing required validation categories: " + ", ".join(sorted(required_categories - categories)))
             if level != "asserted":
                 workflow = basis["workflow"]
-                if workflow.get("workflow") != record.get("workflow") or str(workflow.get("runId")) != str(record.get("run_id")) or workflow.get("job") != record.get("job"):
+                if (workflow.get("repository") != record.get("workflow_repository") or
+                        workflow.get("workflow_path") != record.get("workflow_path") or
+                        workflow.get("workflow_ref") != record.get("workflow_ref") or
+                        str(workflow.get("run_id")) != str(record.get("run_id")) or
+                        str(workflow.get("run_attempt")) != str(record.get("run_attempt")) or
+                        workflow.get("job") != record.get("job")):
                     raise ProcessError("test evidence workflow identity does not match verified provenance")
                 trusted_digests = record.get("artifact_digests", {})
                 for run in basis["runs"]:

@@ -20,8 +20,8 @@
       "type": "object", "required": ["name"], "additionalProperties": false,
       "properties": {
         "name": {"type": "string", "minLength": 1},
-        "trusted_ci_workflows": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true},
-        "authorized_review_workflows": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true}
+        "trusted_ci_workflows": {"type": "array", "items": {"type": "string", "pattern": "^\\.github/workflows/(?!.*(?:^|/)\\.\\.(?:/|$))[^\\\\]+\\.ya?ml$"}, "uniqueItems": true},
+        "authorized_review_workflows": {"type": "array", "items": {"type": "string", "pattern": "^\\.github/workflows/(?!.*(?:^|/)\\.\\.(?:/|$))[^\\\\]+\\.ya?ml$"}, "uniqueItems": true}
       }
     },
     "local_context": {

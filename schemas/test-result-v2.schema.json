@@ -20,7 +20,7 @@
           }
         }},
         "runner": {"type": "object", "required": ["os", "architecture", "image"]},
-        "workflow": {"type": "object", "required": ["workflow", "runId", "runAttempt", "job"]},
+        "workflow": {"type": "object", "required": ["repository", "workflow_path", "workflow_ref", "run_id", "run_attempt", "job"]},
         "environment": {"type": "object"}, "complete": {"type": "boolean"},
         "skipped": {"type": "array"}, "retries": {"type": "array"},
         "flakiness": {"type": "object", "required": ["detected", "signals"],

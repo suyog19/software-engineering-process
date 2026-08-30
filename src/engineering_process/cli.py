@@ -19,6 +19,7 @@ from .policy import load_policy
 from .render import metrics, render_files
 from .outcome_metrics import outcome_report, compare_outcomes
 from .delegation import assess_delegation
+from .adoption import adoption_report
 from .repository import apply_upgrade, current_revision, initialize, upgrade_report
 from .sufficiency import triage
 from .validation import validate_repository
@@ -66,6 +67,7 @@ def parser() -> argparse.ArgumentParser:
     sub.add_parser("render")
     m = sub.add_parser("metrics"); m.add_argument("--obligations"); m.add_argument("--events"); m.add_argument("--baseline-events")
     d = sub.add_parser("delegation"); d.add_argument("--inputs", required=True); d.add_argument("--human-choice")
+    sub.add_parser("adoption-report")
     e = sub.add_parser("attest"); e.add_argument("--predicate", required=True); e.add_argument("--sha", required=True); e.add_argument("--capability", required=True); e.add_argument("--verdict", required=True); e.add_argument("--identity", required=True); e.add_argument("--context-id", required=True); e.add_argument("--implementation-context-id"); e.add_argument("--fresh-context", action="store_true"); e.add_argument("--output", required=True)
     tv = sub.add_parser("run-validation"); tv.add_argument("--sha", required=True); tv.add_argument("--obligations", default=".engineering/effective-obligations.json"); tv.add_argument("--output-dir", required=True)
     rv = sub.add_parser("review-attest"); rv.add_argument("--sha", required=True); rv.add_argument("--basis", required=True); rv.add_argument("--findings", required=True); rv.add_argument("--residual-risk"); rv.add_argument("--identity", required=True); rv.add_argument("--producer-class", required=True, choices=["authorized-human", "authorized-agent"]); rv.add_argument("--context-id", required=True); rv.add_argument("--implementation-context-id", required=True); rv.add_argument("--output-dir", required=True)
@@ -102,6 +104,8 @@ def run(args: argparse.Namespace) -> dict:
                 "required_validation_categories": obligations["required_validation_categories"],
                 "agent_execution": obligations["agent_execution"],
                 "dependency_assurance": obligations["dependency_assurance"],
+                "semantic_native_enforcement": obligations["native_enforcement"],
+                "selected_adapter_mapping": obligations["adapter_mapping"],
                 "native_enforcement": obligations["native_enforcement"], "prohibited_actions": obligations["prohibited_actions"],
                 "not_required": obligations["not_required"], "execution_boundary": obligations["execution_boundary"]}
     if args.command == "render":
@@ -113,6 +117,7 @@ def run(args: argparse.Namespace) -> dict:
         obligations = load_json(root / args.obligations) if args.obligations else None
         return metrics(root, obligations["selected_skills"] if obligations else [])
     if args.command == "delegation": return assess_delegation(_json_arg(args.inputs), args.human_choice)
+    if args.command == "adoption-report": return adoption_report(manifest)
     if args.command == "attest":
         if args.predicate in {"test-result/v2", "independent-review/v2"}:
             raise ProcessError(f"{args.predicate} must be produced by its dedicated authenticated command")

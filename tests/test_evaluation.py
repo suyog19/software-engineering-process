@@ -28,7 +28,8 @@ def test_no_generic_coding_competence_emitted(manifest):
 def test_native_capabilities_are_exposed(manifest):
     result = classify(policy_root(), profile("generic"), manifest)
     native = evaluate(policy_root(), manifest, result)["native_enforcement"]
-    assert native["protected_branches"] is True
+    assert native["protected_branch_required"] is True
+    assert native["readiness_gate_required"] is True
     production = native["production_environment"]
     assert production["manual_human_promotion_required"] is True
     assert production["automation_may_promote"] is False

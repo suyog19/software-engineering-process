@@ -1,5 +1,7 @@
 # Software Engineering Process
 
+See the maintained [capability status](docs/capability-status.md) for what is implemented, partial, experimental, designed, or deferred.
+
 A technology-neutral Software Engineering Policy and Assurance platform. It resolves **what must be true** for a change and delegates **how** to coding assistants, humans, CI, GitHub, and other native mechanisms.
 
 ```text

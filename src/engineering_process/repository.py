@@ -8,7 +8,7 @@ from pathlib import Path
 import yaml
 
 from .errors import ProcessError
-from .io import canonical_json, digest_bytes, digest_file, load_yaml, write_json
+from .io import canonical_json, digest_bytes, digest_file, load_json, load_yaml, write_json
 from .paths import skills_root
 from .paths import policy_root
 from .policy import load_policy, validate_overrides
@@ -80,7 +80,7 @@ def initialize(root: Path, profile: str, repository_name: str, revision: str, fo
     local_context = _adopt_context(root) if adopt_existing_context else []
     core, selected_profile, delivery = load_policy(policy_root(), profile)
     process_version = core["process"]["version"]
-    manifest = {"schema_version": 1, "process": {"source": "suyog19/software-engineering-process", "version": process_version, "revision": revision, "profile": profile}, "repository": {"name": repository_name}, "overrides": {"validation": {"commands": []}}}
+    manifest = {"schema_version": 2, "process": {"source": "suyog19/software-engineering-process", "version": process_version, "revision": revision, "profile": profile}, "repository": {"name": repository_name}, "overrides": {"validation": {"commands": []}}, "adoption": {"target_mode": "Foundation", "metrics_enabled": False}, "adapters": {"github": {"readiness_status": "engineering-process", "protected_branch": "main", "production_environment": "production", "runner_labels": ["ubuntu-latest"]}}}
     if local_context:
         manifest["local_context"] = local_context
     engineering.mkdir(parents=True, exist_ok=True)
@@ -110,6 +110,23 @@ def manifest_digest(manifest: dict) -> str:
     return digest_bytes(canonical_json(manifest).encode())
 
 
+def _migrate_manifest_v2(manifest: dict) -> dict:
+    if manifest.get("schema_version") != 1:
+        return manifest
+    manifest["schema_version"] = 2
+    overrides = manifest.setdefault("overrides", {})
+    technology = overrides.pop("technology", None)
+    if technology is not None:
+        overrides.setdefault("extensions", []).append({"namespace": "legacy/technology", "schema_version": 1, "configuration": technology})
+    legacy_native = overrides.pop("native_enforcement", {})
+    checks = legacy_native.get("required_status_checks", ["engineering-process"])
+    manifest.setdefault("adoption", {"target_mode": "Foundation", "metrics_enabled": False})
+    manifest.setdefault("adapters", {})["github"] = {
+        "readiness_status": checks[0] if checks else "engineering-process", "protected_branch": "main",
+        "production_environment": "production", "runner_labels": ["ubuntu-latest"]}
+    return manifest
+
+
 def _flatten(value, prefix="") -> dict[str, object]:
     if isinstance(value, dict):
         return {k: v for key, item in value.items() for k, v in _flatten(item, f"{prefix}.{key}" if prefix else key).items()}
@@ -137,6 +154,10 @@ def upgrade_report(root: Path, version: str, revision: str) -> dict:
         path = root / name
         status = "modified" if not path.exists() or path.read_text(encoding="utf-8") != bootstrap(proposed_manifest, assistant) else "unchanged"
         generated_changes.append({"path": name, "status": status})
+    desired_scoped = {f".github/instructions/{item['name']}.instructions.md" for item in proposed_manifest.get("adapters", {}).get("github_copilot", {}).get("scoped_instructions", [])}
+    existing_scoped = set(load_json(root / ".engineering/process.lock").get("generated_files", {})) if (root / ".engineering/process.lock").exists() else set()
+    for path in sorted(desired_scoped | {p for p in existing_scoped if p.startswith(".github/instructions/") and p.endswith(".instructions.md")}):
+        generated_changes.append({"path": path, "status": "generated" if path in desired_scoped else "removed"})
     return {"current": manifest["process"], "proposed": proposed_manifest["process"],
             "inherited_rule_changes": changes, "new_locked_rule_changes": locked,
             "override_conflicts": [], "generated_files_change": generated_changes + [{"path": ".engineering/skills/*", "status": "refreshed"}, {"path": ".github/workflows/process-validation.yml", "status": "review"}],
@@ -147,13 +168,22 @@ def upgrade_report(root: Path, version: str, revision: str) -> dict:
 def apply_upgrade(root: Path, version: str, revision: str) -> dict:
     report = upgrade_report(root, version, revision)
     manifest = load_yaml(root / ".engineering" / "process.yaml")
+    previous_schema = manifest.get("schema_version", 1)
+    manifest = _migrate_manifest_v2(manifest)
     lock_path = root / ".engineering/process.lock"
     lock = __import__("json").loads(lock_path.read_text())
-    for relative in lock.get("generated_files", {}):
+    old_generated = set(lock.get("generated_files", {}))
+    for relative in old_generated:
         _assert_owned(root, lock, relative)
     manifest["process"].update({"version": version, "revision": revision})
     core, selected_profile, delivery = load_policy(policy_root(), manifest["process"]["profile"])
     generated = render_files(root, manifest, allow_create=False)
+    removed = []
+    for relative in sorted(old_generated - set(generated)):
+        if relative.startswith(".github/instructions/") and relative.endswith(".instructions.md"):
+            path = root / relative
+            if path.exists() and path.read_text(encoding="utf-8").startswith("<!-- GENERATED BY software-engineering-process"):
+                path.unlink(); removed.append(relative)
     destination = root / ".engineering/skills"
     shutil.rmtree(destination)
     shutil.copytree(skills_root(), destination)
@@ -171,4 +201,5 @@ def apply_upgrade(root: Path, version: str, revision: str) -> dict:
                 "manifest_digest": manifest_digest(manifest), "policy_digest": digest_bytes(canonical_json(snapshot).encode()),
                 "generated_at": datetime.now(timezone.utc).isoformat(), "generated_files": generated}
     write_json(lock_path, new_lock)
-    return {**report, "applied": True, "preserved_context": report["preserved_local_context"]}
+    return {**report, "applied": True, "preserved_context": report["preserved_local_context"], "removed_generated_adapters": removed,
+            "schema_migration": f"v{previous_schema}->v2" if previous_schema != 2 else None}

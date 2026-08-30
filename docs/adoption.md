@@ -20,6 +20,23 @@ The initial checkout and runner are the bootstrap trust boundary. Evidence
 transport and v1 compatibility are defined in the [exact-revision evidence
 lifecycle](evidence-lifecycle.md).
 
+### Schema v2 and adapters
+
+Process 1.3.0 upgrades schema-v1 manifests to strict schema v2. Legacy
+`overrides.technology` moves to the explicit versioned `legacy/technology`
+extension; platform mechanics move from `overrides.native_enforcement` to
+`adapters.github`. Unknown v2 fields are rejected. Canonical policy now expresses
+semantic readiness, protected-branch, and production-boundary obligations while
+the versioned GitHub adapter selects status names, branches, environments, and
+runner labels. Stronger local controls remain valid; locked-control weakening is
+still rejected.
+
+Optional `adapters.github_copilot.scoped_instructions` generate compact
+path-scoped `.github/instructions/*.instructions.md` files from canonical process
+identity and declared local-context paths. They are hash-locked and non-canonical.
+Remove adapter configuration during a reviewed upgrade to remove only unchanged
+generated files; modified or repository-owned files are refused.
+
 ### Phase 2 evidence migration
 
 Process 1.1.0 obligation sets require `test-result/v2` and `independent-review/v2`.

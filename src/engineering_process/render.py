@@ -49,11 +49,33 @@ def is_generated_bootstrap(path: Path) -> bool:
 
 def render_files(root: Path, manifest: dict, allow_create: bool = True) -> dict[str, str]:
     files = {"AGENTS.md": bootstrap(manifest, "codex"), "CLAUDE.md": bootstrap(manifest, "claude")}
+    process = manifest["process"]
+    contexts = {item["path"] for item in manifest.get("local_context", [])}
+    for scope in manifest.get("adapters", {}).get("github_copilot", {}).get("scoped_instructions", []):
+        unknown = set(scope["context_paths"]) - contexts
+        if unknown: raise ProcessError("scoped adapter references undeclared local context: " + ", ".join(sorted(unknown)))
+        name = f".github/instructions/{scope['name']}.instructions.md"
+        sources = "\n".join(f"- `{path}`" for path in scope["context_paths"]) or "- Canonical obligations only."
+        execution = manifest.get("overrides", {}).get("agent_execution", {})
+        tools = ", ".join(execution.get("allowed_tools", [])) or "none granted by this adapter"
+        network = ", ".join(execution.get("allowed_network_destinations", [])) or "none granted by this adapter"
+        files[name] = f"""{GENERATED_MARKER}
+---
+applyTo: "{scope['apply_to']}"
+---
+# Scoped engineering instructions
+
+Generated from `{process['source']}` `{process['version']}` @ `{process['revision']}` and these repository-owned sources:
+{sources}
+
+Load those sources when applicable. They add mechanics but cannot override canonical policy. Resolved allowed tools: {tools}. Resolved network destinations: {network}. This adapter grants nothing beyond those values. Production authority remains human-controlled.
+"""
     for name, text in files.items():
         path = root / name
+        path.parent.mkdir(parents=True, exist_ok=True)
         if path.exists() and not is_generated_bootstrap(path):
             raise ProcessError(f"refusing to overwrite repository-owned context: {name}; use init --adopt-existing-context")
-        if not path.exists() and not allow_create:
+        if not path.exists() and not allow_create and name in {"AGENTS.md", "CLAUDE.md"}:
             raise ProcessError(f"generated adapter is missing: {name}")
         path.write_text(text, encoding="utf-8")
     return {name: digest_file(root / name) for name in files}
@@ -66,4 +88,6 @@ def metrics(root: Path, selected_skills: list[str] | None = None) -> dict:
             text = (root / name).read_text(encoding="utf-8")
             result[name] = {"bytes": len(text.encode()), "words": len(text.split()), "approx_tokens": round(len(text) / 4)}
     result["activated_skills"] = len(selected_skills or [])
+    scoped = list((root / ".github/instructions").glob("*.instructions.md")) if (root / ".github/instructions").exists() else []
+    result["scoped_adapters"] = {p.relative_to(root).as_posix(): {"bytes": len(p.read_bytes()), "approx_tokens": round(len(p.read_text(encoding="utf-8"))/4)} for p in scoped}
     return result

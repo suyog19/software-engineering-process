@@ -85,6 +85,7 @@ def evaluate(policy_root: Path, manifest: dict, classification: Classification) 
         "approvals": approvals,
         "prohibited_actions": sorted(selected["prohibited_actions"]),
         "native_enforcement": core["native_enforcement"],
+        "adapter_mapping": {"platform": "github", **manifest.get("adapters", {}).get("github", {})} if manifest.get("adapters", {}).get("github") else None,
         "human_production_boundary": controls["human_production_boundary"],
         "independent_review": controls["independent_review"],
         "validation_commands": controls["validation_commands"]["values"],

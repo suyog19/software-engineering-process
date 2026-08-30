@@ -11,6 +11,7 @@ from .repository import manifest_digest
 from .schema_validation import validate
 from .evidence import load_attestations, verify_readiness
 from .context_truth import verify_context
+from .adoption import adoption_report
 
 
 def _schema(name: str) -> dict:
@@ -30,6 +31,11 @@ def validate_repository(root: Path, runtime_revision: str | None = None) -> dict
     manifest, lock = load_yaml(manifest_path), load_json(lock_path)
     _validate_schema(manifest, "repository-process.schema.json")
     _validate_schema(lock, "process-lock.schema.json")
+    if manifest["schema_version"] == 2 and manifest.get("overrides", {}).get("native_enforcement"):
+        raise ProcessError("schema v2 moves platform mechanics from overrides.native_enforcement to adapters")
+    if manifest.get("adapters", {}).get("github"):
+        errors = validate(manifest["adapters"]["github"], _schema("github-adapter-v1.schema.json"))
+        if errors: raise ProcessError("invalid GitHub adapter: " + "; ".join(errors))
     core, _, _ = load_policy(policy_root(), manifest["process"]["profile"])
     if manifest["process"]["version"] != core["process"]["version"]:
         raise ProcessError("invalid process version")
@@ -52,6 +58,9 @@ def validate_repository(root: Path, runtime_revision: str | None = None) -> dict
         if not context_path.exists():
             raise ProcessError(f"missing local-context reference: {item['path']}")
     context_truth = verify_context(root, manifest.get("local_context", []))
+    adoption = adoption_report(manifest)
+    if not adoption["achieved"]:
+        raise ProcessError("configured adoption mode is not achieved: " + "; ".join(adoption["missing_prerequisites"]))
     for name, assistant in (("AGENTS.md", "codex"), ("CLAUDE.md", "claude")):
         path = root / name
         if not path.exists() or path.read_text(encoding="utf-8") != bootstrap(manifest, assistant):
@@ -74,4 +83,4 @@ def validate_repository(root: Path, runtime_revision: str | None = None) -> dict
         readiness = verify_readiness(obligations, load_attestations(root / ".engineering/evidence"), _schema("evidence.schema.json"), sha)
         if not readiness["ready"]:
             raise ProcessError(f"missing or invalid obligation evidence: {readiness}")
-    return {"valid": True, "profile": manifest["process"]["profile"], "version": lock["version"], "revision": lock["revision"], "runtime_revision": runtime_revision, "context_truth": context_truth}
+    return {"valid": True, "profile": manifest["process"]["profile"], "version": lock["version"], "revision": lock["revision"], "runtime_revision": runtime_revision, "context_truth": context_truth, "adoption": adoption, "schema_migration": "v1 supported; upgrade to v2 for strict adapters" if manifest["schema_version"] == 1 else None}

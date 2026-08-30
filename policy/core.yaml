@@ -1,6 +1,6 @@
 schema_version: 1
 process:
-  version: 1.2.0
+  version: 1.3.0
   source: suyog19/software-engineering-process
 controls:
   traceability:
@@ -73,16 +73,10 @@ capabilities:
   solution-sufficiency: {authority: minimum_sufficient_solution_and_feedback_triage}
   ci-automation: {authority: objective_checks_and_policy_enforcement}
 native_enforcement:
-  required_status_checks: [engineering-process]
-  protected_branches: true
+  readiness_gate_required: true
+  protected_branch_required: true
   production_environment:
     manual_human_promotion_required: true
     automation_may_promote: false
     distinct_human_reviewer_required: false
     stronger_multi_human_gate_permitted: true
-  agent_execution:
-    permissions: read-only-by-default
-    secrets: environment-scoped-and-withheld-from-forks
-    runner: ephemeral-sandbox
-    network: adapter-enforced-allowlist
-    workflow_approval: required-for-untrusted-forks

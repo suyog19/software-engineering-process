@@ -20,6 +20,26 @@ The initial checkout and runner are the bootstrap trust boundary. Evidence
 transport and v1 compatibility are defined in the [exact-revision evidence
 lifecycle](evidence-lifecycle.md).
 
+### Phase 2 evidence migration
+
+Process 1.1.0 obligation sets require `test-result/v2` and `independent-review/v2`.
+`test-result/v1` and `independent-review/v1` remain schema-valid only for stored
+historical obligations that explicitly require v1; they do not satisfy v2.
+Configure validation commands with `focused`, `integration`, `negative`, or
+`security` categories and use `run-validation` in trusted CI. Use the protected
+`review-attest` workflow after reviewing the exact diff and v2 test evidence. A
+process upgrade changes obligations only with the new locked process revision.
+
+Validation commands are executable argument strings, not shell programs; pipes,
+redirection, interpolation, and compound shell expressions are intentionally not
+supported. Put complex validation in a reviewed repository script and configure
+that script as the command.
+
+Standard/Protected agent execution requires a native sandbox; Protected also
+requires declared network enforcement and an audit sink. See the [security
+baseline](agent-execution-security.md) and [GitHub
+mapping](../enforcement/github/agent-execution.md).
+
 ## Production authority and independent review
 
 The human production boundary and independent review are separate controls. Every change still requires fresh-context, implementation-independent review evidence. Production authorization and promotion remain manual human actions, and automation or agents may not perform them. For an owner-controlled repository, the owner's explicit authorization and manual merge or promotion satisfy the human boundary; a second human GitHub reviewer is not implicitly required. Repositories with multiple authorized maintainers may configure a stronger branch or Environment reviewer gate.

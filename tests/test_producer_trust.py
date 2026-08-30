@@ -11,7 +11,7 @@ SHA, REV = "a" * 40, "b" * 40
 
 
 def setup(repository="org/repo"):
-    att = make_attestation(repository, SHA, "test-result/v1", "1.0.1", REV,
+    att = make_attestation(repository, SHA, "test-result/v1", "1.1.0", REV,
                            "ci-automation", "pass", "actions", "run")
     obligations = {"repository": {"name": "org/repo"}, "process": {"revision": REV},
                    "classification": {"target_revision": SHA, "delivery_profile": "Protected"},

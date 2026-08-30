@@ -50,7 +50,18 @@ def test_fresh_context_review_remains_required(manifest):
     result = classify(policy_root(), profile("generic"), manifest)
     obligations = evaluate(policy_root(), manifest, result)
     assert "independent-review" in obligations["required_capabilities"]
-    assert "independent-review/v1" in obligations["required_evidence"]
+    assert "independent-review/v2" in obligations["required_evidence"]
     review = obligations["independent_review"]
     assert review["fresh_context_required"] is True
     assert review["implementation_context_may_issue_verdict"] is False
+
+
+def test_validation_categories_scale_by_delivery_profile(manifest):
+    lean = evaluate(policy_root(), manifest, classify(policy_root(), profile("generic"), manifest))
+    standard = evaluate(policy_root(), manifest, classify(policy_root(), profile("generic"), manifest,
+                                                           declared={"observable_behavior": True}))
+    protected = evaluate(policy_root(), manifest, classify(policy_root(), profile("generic"), manifest,
+                                                            declared={"secrets": True}))
+    assert lean["required_validation_categories"] == ["focused"]
+    assert standard["required_validation_categories"] == ["focused", "integration"]
+    assert protected["required_validation_categories"] == ["focused", "integration", "negative", "security"]

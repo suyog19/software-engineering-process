@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://suyogjoshi.com/software-signal/engineering/independent-review/v2",
+  "type": "object",
+  "required": ["processVersion", "processRevision", "capability", "verdict", "issuedAt", "producer", "reviewBasis", "findings", "residualRisk"],
+  "properties": {
+    "reviewBasis": {
+      "type": "object", "additionalProperties": false,
+      "required": ["issue", "fullDiff", "context", "validation", "counterexamples", "unverifiedAreas", "editedChange"],
+      "properties": {
+        "issue": {"type": "object", "required": ["reference", "acceptanceCriteriaReviewed"]},
+        "fullDiff": {"type": "object", "required": ["base", "head", "inspected"]},
+        "context": {"type": "object", "required": ["paths", "applicableContextReviewed"]},
+        "validation": {"type": "object", "required": ["evidenceIds", "examined"]},
+        "counterexamples": {"type": "object", "required": ["scenarios", "searched"]},
+        "unverifiedAreas": {"type": "array"}, "editedChange": {"type": "boolean"}
+      }
+    },
+    "findings": {"type": "array", "items": {"type": "object", "required": ["severity", "blocking"]}},
+    "residualRisk": {"type": "array", "items": {"type": "object", "required": ["severity", "description"]}}
+  }
+}

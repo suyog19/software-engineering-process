@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://suyogjoshi.com/software-signal/engineering/test-result/v2",
+  "type": "object",
+  "required": ["processVersion", "processRevision", "capability", "verdict", "issuedAt", "producer", "validation"],
+  "properties": {
+    "validation": {
+      "type": "object", "additionalProperties": false,
+      "required": ["commands", "runs", "runner", "workflow", "environment", "complete", "skipped", "retries", "flakiness"],
+      "properties": {
+        "commands": {"type": "array", "minItems": 1, "items": {"type": "string"}},
+        "runs": {"type": "array", "minItems": 1, "items": {
+          "type": "object", "additionalProperties": false,
+          "required": ["command", "category", "startedAt", "completedAt", "exitCode", "log"],
+          "properties": {
+            "command": {"type": "string"}, "category": {"enum": ["focused", "integration", "negative", "security"]},
+            "startedAt": {"type": "string"}, "completedAt": {"type": "string"}, "exitCode": {"type": "integer"},
+            "log": {"type": "object", "additionalProperties": false, "required": ["name", "sha256"],
+                    "properties": {"name": {"type": "string"}, "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}}}
+          }
+        }},
+        "runner": {"type": "object", "required": ["os", "architecture", "image"]},
+        "workflow": {"type": "object", "required": ["workflow", "runId", "runAttempt", "job"]},
+        "environment": {"type": "object"}, "complete": {"type": "boolean"},
+        "skipped": {"type": "array"}, "retries": {"type": "array"},
+        "flakiness": {"type": "object", "required": ["detected", "signals"],
+                       "properties": {"detected": {"type": "boolean"}, "signals": {"type": "array"}}}
+      }
+    }
+  }
+}

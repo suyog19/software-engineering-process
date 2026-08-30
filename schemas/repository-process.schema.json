@@ -18,7 +18,11 @@
     },
     "repository": {
       "type": "object", "required": ["name"], "additionalProperties": true,
-      "properties": {"name": {"type": "string", "minLength": 1}}
+      "properties": {
+        "name": {"type": "string", "minLength": 1},
+        "trusted_ci_workflows": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true},
+        "authorized_review_workflows": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true}
+      }
     },
     "local_context": {
       "type": "array",
@@ -36,11 +40,22 @@
       "type": "object", "additionalProperties": false,
       "properties": {
         "technology": {"type": "object"},
-        "validation": {"type": "object", "properties": {"commands": {"type": "array", "items": {"type": "string"}}}},
+        "validation": {"type": "object", "properties": {"commands": {"type": "array", "items": {"type": ["string", "object"]}}}},
         "classification": {"type": "object", "properties": {"protected_path_hints": {"type": "array", "items": {"type": "string"}}, "additional_protected_characteristics": {"type": "array", "items": {"type": "string"}}}},
         "ux": {"type": "object", "properties": {"additional_required_when": {"type": "array", "items": {"type": "string"}}}},
         "controls": {"type": "object"},
         "native_enforcement": {"type": "object"}
+        ,"agent_execution": {
+          "type": "object", "additionalProperties": false,
+          "properties": {
+            "allowed_network_destinations": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true},
+            "allowed_tools": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true},
+            "additional_denied_tools": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true},
+            "sandbox": {"enum": ["native", "container", "ephemeral-vm"]},
+            "network_enforcement": {"enum": ["native", "proxy", "firewall"]},
+            "audit_sink": {"type": "string", "minLength": 1}
+          }
+        }
       }
     }
   }

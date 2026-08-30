@@ -1,13 +1,15 @@
 Lean:
   required_capabilities: [software-developer, independent-review, ci-automation]
-  required_evidence: [classification/v1, test-result/v1, independent-review/v1]
+  required_evidence: [classification/v1, test-result/v2, independent-review/v2]
+  required_validation_categories: [focused]
   prohibited_actions: [self_independent_review, unapproved_scope_expansion]
 Standard:
   required_capabilities: [software-developer, functional-qa, independent-review, ci-automation]
-  required_evidence: [classification/v1, test-result/v1, functional-qa-verdict/v1, independent-review/v1]
+  required_evidence: [classification/v1, test-result/v2, functional-qa-verdict/v1, independent-review/v2]
+  required_validation_categories: [focused, integration]
   prohibited_actions: [self_independent_review, unapproved_scope_expansion]
 Protected:
   required_capabilities: [product-owner, architect, engineering-manager, software-developer, functional-qa, non-functional-qa, independent-review, solution-sufficiency, ci-automation]
-  required_evidence: [classification/v1, architecture-decision/v1, test-result/v1, functional-qa-verdict/v1, non-functional-qa-verdict/v1, independent-review/v1, solution-sufficiency/v1, human-approval/v1]
+  required_evidence: [classification/v1, architecture-decision/v1, test-result/v2, functional-qa-verdict/v1, non-functional-qa-verdict/v1, independent-review/v2, solution-sufficiency/v1, human-approval/v1]
+  required_validation_categories: [focused, integration, negative, security]
   prohibited_actions: [self_independent_review, autonomous_production_approval, weakening_native_controls, unresolved_protected_ambiguity]
-

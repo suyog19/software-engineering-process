@@ -11,6 +11,7 @@ from .git_changes import collect_changes
 from .errors import ProcessError
 from .evaluation import evaluate
 from .evidence import load_attestations, make_attestation, verify_readiness
+from .evidence_generation import generate_review, generate_test_result
 from .io import load_json, load_yaml, write_json
 from .paths import data_root, policy_root, schemas_root
 from .policy import load_policy
@@ -61,7 +62,9 @@ def parser() -> argparse.ArgumentParser:
     sub.add_parser("render")
     m = sub.add_parser("metrics"); m.add_argument("--obligations")
     e = sub.add_parser("attest"); e.add_argument("--predicate", required=True); e.add_argument("--sha", required=True); e.add_argument("--capability", required=True); e.add_argument("--verdict", required=True); e.add_argument("--identity", required=True); e.add_argument("--context-id", required=True); e.add_argument("--implementation-context-id"); e.add_argument("--fresh-context", action="store_true"); e.add_argument("--output", required=True)
-    r = sub.add_parser("readiness"); r.add_argument("--sha", required=True); r.add_argument("--obligations", default=".engineering/effective-obligations.json"); r.add_argument("--evidence-dir", default=".engineering/evidence"); r.add_argument("--trust-index", help="out-of-band verified transport index (must be outside repository)")
+    tv = sub.add_parser("run-validation"); tv.add_argument("--sha", required=True); tv.add_argument("--obligations", default=".engineering/effective-obligations.json"); tv.add_argument("--output-dir", required=True)
+    rv = sub.add_parser("review-attest"); rv.add_argument("--sha", required=True); rv.add_argument("--basis", required=True); rv.add_argument("--findings", required=True); rv.add_argument("--residual-risk"); rv.add_argument("--identity", required=True); rv.add_argument("--producer-class", required=True, choices=["authorized-human", "authorized-agent"]); rv.add_argument("--context-id", required=True); rv.add_argument("--implementation-context-id", required=True); rv.add_argument("--output-dir", required=True)
+    r = sub.add_parser("readiness"); r.add_argument("--sha", required=True); r.add_argument("--obligations", default=".engineering/effective-obligations.json"); r.add_argument("--evidence-dir", default=".engineering/evidence"); r.add_argument("--trust-index", help="out-of-band verified transport index (must be outside repository)"); r.add_argument("--artifact-dir", help="downloaded immutable validation logs")
     s = sub.add_parser("sufficiency"); s.add_argument("--findings", required=True); s.add_argument("--output")
     u = sub.add_parser("upgrade"); u.add_argument("--version", required=True); u.add_argument("--revision", required=True); u.add_argument("--dry-run", action="store_true")
     return p
@@ -90,6 +93,8 @@ def run(args: argparse.Namespace) -> dict:
                 "changed_path_explanations": result.path_explanations,
                 "why": result.reasons, "required_capabilities": obligations["required_capabilities"],
                 "required_evidence": obligations["required_evidence"], "selected_skills": obligations["selected_skills"],
+                "required_validation_categories": obligations["required_validation_categories"],
+                "agent_execution": obligations["agent_execution"],
                 "native_enforcement": obligations["native_enforcement"], "prohibited_actions": obligations["prohibited_actions"],
                 "not_required": obligations["not_required"], "execution_boundary": obligations["execution_boundary"]}
     if args.command == "render":
@@ -98,8 +103,23 @@ def run(args: argparse.Namespace) -> dict:
         obligations = load_json(root / args.obligations) if args.obligations else None
         return metrics(root, obligations["selected_skills"] if obligations else [])
     if args.command == "attest":
+        if args.predicate in {"test-result/v2", "independent-review/v2"}:
+            raise ProcessError(f"{args.predicate} must be produced by its dedicated authenticated command")
         att = make_attestation(manifest["repository"]["name"], args.sha, args.predicate, manifest["process"]["version"], manifest["process"]["revision"], args.capability, args.verdict, args.identity, args.context_id, args.implementation_context_id, args.fresh_context)
         write_json(root / args.output, att); return att
+    if args.command == "run-validation":
+        output = Path(args.output_dir).resolve()
+        att, trust = generate_test_result(root, manifest, load_json(root / args.obligations), args.sha, output)
+        write_json(output / "test-result.json", att); write_json(output / "trust-index.json", {"evidence": trust})
+        if att["predicate"]["verdict"] != "pass": raise ProcessError("validation failed; inspect immutable logs")
+        return {"evidence": str(output / "test-result.json"), "trust_index": str(output / "trust-index.json")}
+    if args.command == "review-attest":
+        output = Path(args.output_dir).resolve(); output.mkdir(parents=True, exist_ok=True)
+        att, trust = generate_review(manifest, args.sha, load_json(Path(args.basis)), load_json(Path(args.findings)),
+                                     load_json(Path(args.residual_risk)) if args.residual_risk else [], args.identity,
+                                     args.context_id, args.implementation_context_id, args.producer_class)
+        write_json(output / "independent-review.json", att); write_json(output / "trust-index.json", {"evidence": trust})
+        return {"evidence": str(output / "independent-review.json"), "trust_index": str(output / "trust-index.json")}
     if args.command == "readiness":
         obligations = load_json(root / args.obligations); evidence = load_attestations(root / args.evidence_dir)
         trust = None
@@ -108,7 +128,8 @@ def run(args: argparse.Namespace) -> dict:
             if trust_path == root or root in trust_path.parents:
                 raise ProcessError("trust index must come from an out-of-band verified transport outside the repository")
             trust = load_json(trust_path).get("evidence", {})
-        result = verify_readiness(obligations, evidence, load_json(schemas_root() / "evidence.schema.json"), args.sha, trust)
+        result = verify_readiness(obligations, evidence, load_json(schemas_root() / "evidence.schema.json"), args.sha, trust,
+                                  Path(args.artifact_dir).resolve() if args.artifact_dir else None)
         if not result["ready"]: raise ProcessError("readiness failed: " + json.dumps(result, sort_keys=True))
         return result
     if args.command == "sufficiency":

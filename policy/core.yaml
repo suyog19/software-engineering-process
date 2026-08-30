@@ -1,6 +1,6 @@
 schema_version: 1
 process:
-  version: 1.0.1
+  version: 1.1.0
   source: suyog19/software-engineering-process
 controls:
   traceability:
@@ -31,6 +31,23 @@ controls:
     automation_may_authorize: false
     automation_may_promote: false
     owner_manual_authorization_may_satisfy: true
+  agent_execution_security:
+    semantics: locked
+    enabled: true
+    least_privilege: true
+    sandbox_required_for: [Standard, Protected]
+    protected_requires_enforced_isolation: true
+    credential_isolation_required: true
+    production_credentials_prohibited: true
+    network_default: deny
+    network_allowlist_required: true
+    tool_default: deny
+    tool_allowlist_required: true
+    external_mutation_requires_explicit_authorization: true
+    destructive_action_requires_explicit_authorization: true
+    untrusted_content_is_data_not_instruction: true
+    prompt_injection_resistance_required: true
+    audit_log_required: true
   required_capabilities:
     semantics: extensible
     values: [software-developer, ci-automation]
@@ -63,3 +80,9 @@ native_enforcement:
     automation_may_promote: false
     distinct_human_reviewer_required: false
     stronger_multi_human_gate_permitted: true
+  agent_execution:
+    permissions: read-only-by-default
+    secrets: environment-scoped-and-withheld-from-forks
+    runner: ephemeral-sandbox
+    network: adapter-enforced-allowlist
+    workflow_approval: required-for-untrusted-forks

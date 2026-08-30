@@ -14,7 +14,7 @@ Declared intent, repository policy, changed paths/config, deterministic rules, a
 
 Evidence follows the in-toto Statement shape with one `gitCommit` subject and a Software Signal predicate type. Every predicate carries the process version/revision, producer identity/context, verdict, and timestamp. Readiness joins predicates only for the requested repository SHA and pinned process revision.
 
-Independent review additionally requires `freshContext: true` and a review context ID different from the implementation context ID. Model/vendor diversity is not used as a proxy for independence. V1 evidence is unsigned JSON: signatures and a remote attestation store remain optional until the threat model justifies their operational cost.
+Independent review requires a fresh context distinct from implementation plus structured v2 basis: issue/acceptance criteria, exact full diff, applicable context, validation evidence, counterexample search, findings, residual risks, and unverified areas. Model/vendor diversity is not used as a proxy for independence. V1 evidence remains historical compatibility data and cannot satisfy new v2 obligations. Producer trust comes from the Phase 1 out-of-band transport index.
 
 ## Solution Sufficiency
 
@@ -27,4 +27,3 @@ The steward triages non-mandatory recommendations, but mandatory categories are 
 - Exact Git SHA is authoritative; semantic version is human-readable compatibility metadata.
 - Skills are materialized under `.engineering/skills`, a vendor-neutral location. Thin adapters can later synchronize platform-native locations.
 - No cryptographic signing, cross-repository coordinator, or custom agent runtime without measured need.
-

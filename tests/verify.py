@@ -20,7 +20,7 @@ REV, SHA = "a" * 40, "b" * 40
 
 
 def manifest(profile="generic"):
-    return {"schema_version": 1, "process": {"source": "suyog19/software-engineering-process", "version": "1.0.1", "revision": REV, "profile": profile}, "repository": {"name": "example/repo"}, "overrides": {}}
+    return {"schema_version": 1, "process": {"source": "suyog19/software-engineering-process", "version": "1.1.0", "revision": REV, "profile": profile}, "repository": {"name": "example/repo"}, "overrides": {"agent_execution": {"sandbox": "ephemeral-vm", "network_enforcement": "firewall", "audit_sink": "test-audit"}}}
 
 
 def prof(name): return load_policy(policy_root(), name)[1]
@@ -56,7 +56,7 @@ def main():
     schema=load_json(schemas_root()/"evidence.schema.json")
     def att(kind, sha=SHA, ctx="review", impl="build", fresh=True, verdict="pass"):
         capabilities={"test-result/v1":"ci-automation","independent-review/v1":"independent-review"}
-        return make_attestation("repo",sha,kind,"1.0.1",REV,capabilities[kind],verdict,"actor",ctx,impl,fresh)
+        return make_attestation("repo",sha,kind,"1.1.0",REV,capabilities[kind],verdict,"actor",ctx,impl,fresh)
     obligations={"process":{"revision":REV},"required_evidence":["test-result/v1","independent-review/v1"]}
     check("wrong SHA rejected", lambda: expect_error(lambda: verify_readiness(obligations,[att("test-result/v1","c"*40)],schema,SHA),"wrong SHA"))
     check("self review rejected", lambda: expect_error(lambda: verify_readiness(obligations,[att("independent-review/v1",ctx="x",impl="x")],schema,SHA),"fresh context"))
@@ -70,8 +70,8 @@ def main():
     def upgrade():
         with tempfile.TemporaryDirectory() as td:
             root=Path(td); initialize(root,"backend","example/api",REV)
-            dry=upgrade_report(root,"1.0.1","c"*40); assert "inherited_rule_changes" in dry and dry["proposed"]["revision"] == "c"*40
-            apply_upgrade(root,"1.0.1","c"*40); assert validate_repository(root)["revision"] == "c"*40
+            dry=upgrade_report(root,"1.1.0","c"*40); assert "inherited_rule_changes" in dry and dry["proposed"]["revision"] == "c"*40
+            apply_upgrade(root,"1.1.0","c"*40); assert validate_repository(root)["revision"] == "c"*40
     check("controlled process upgrade", upgrade)
     print(f"{len(checks)} acceptance checks passed")
 

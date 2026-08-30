@@ -29,7 +29,9 @@ def validate_overrides(core: dict, manifest: dict) -> None:
         if semantics == "locked":
             if isinstance(candidate, dict):
                 for field, value in candidate.items():
-                    if field in base and value != base[field]:
+                    if field not in base:
+                        raise ProcessError(f"unknown locked control field: {key}.{field}")
+                    if value != base[field]:
                         raise ProcessError(f"locked control cannot be changed: {key}.{field}")
             elif candidate != base.get("enabled"):
                 raise ProcessError(f"locked control cannot be weakened: {key}")
@@ -49,4 +51,3 @@ def effective_controls(core: dict, profile: dict, manifest: dict) -> dict:
     if validation is not None:
         result["validation_commands"]["values"] = validation
     return result
-

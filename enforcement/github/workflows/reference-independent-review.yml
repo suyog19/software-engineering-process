@@ -1,0 +1,63 @@
+name: Reference independent review
+on:
+  workflow_dispatch:
+    inputs:
+      base-sha: {required: true, type: string}
+      target-sha: {required: true, type: string}
+      issue-reference: {required: true, type: string}
+      validation-evidence-id: {required: true, type: string}
+      implementation-context-id: {required: true, type: string}
+      context-paths-json: {required: true, type: string, default: "[]"}
+      counterexamples-json: {required: true, type: string, default: "[]"}
+      findings-json: {required: true, type: string, default: "[]"}
+      residual-risk-json: {required: true, type: string, default: "[]"}
+      unverified-areas-json: {required: true, type: string, default: "[]"}
+permissions:
+  contents: read
+jobs:
+  review:
+    environment: independent-review
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: "${{ inputs.target-sha }}", fetch-depth: 0}
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - id: process
+        shell: bash
+        run: |
+          revision="$(python -c 'import json; print(json.load(open(".engineering/process.lock"))["revision"])')"
+          [[ "$revision" =~ ^[0-9a-f]{40}$ ]] || exit 2
+          echo "revision=$revision" >> "$GITHUB_OUTPUT"
+      - run: pip install 'git+https://github.com/suyog19/software-engineering-process@${{ steps.process.outputs.revision }}'
+      - name: Build structured review basis from authenticated dispatch
+        env:
+          BASE_SHA: ${{ inputs.base-sha }}
+          TARGET_SHA: ${{ inputs.target-sha }}
+          ISSUE_REF: ${{ inputs.issue-reference }}
+          VALIDATION_ID: ${{ inputs.validation-evidence-id }}
+          CONTEXT_PATHS: ${{ inputs.context-paths-json }}
+          COUNTEREXAMPLES: ${{ inputs.counterexamples-json }}
+          FINDINGS: ${{ inputs.findings-json }}
+          RESIDUAL_RISK: ${{ inputs.residual-risk-json }}
+          UNVERIFIED: ${{ inputs.unverified-areas-json }}
+        shell: python
+        run: |
+          import json, os
+          basis = {
+            "issue": {"reference": os.environ["ISSUE_REF"], "acceptanceCriteriaReviewed": True},
+            "fullDiff": {"base": os.environ["BASE_SHA"], "head": os.environ["TARGET_SHA"], "inspected": True},
+            "context": {"paths": json.loads(os.environ["CONTEXT_PATHS"]), "applicableContextReviewed": True},
+            "validation": {"evidenceIds": [os.environ["VALIDATION_ID"]], "examined": True},
+            "counterexamples": {"scenarios": json.loads(os.environ["COUNTEREXAMPLES"]), "searched": True},
+            "unverifiedAreas": json.loads(os.environ["UNVERIFIED"]), "editedChange": False,
+          }
+          json.dump(basis, open(os.path.join(os.environ["RUNNER_TEMP"], "basis.json"), "w"))
+          json.dump(json.loads(os.environ["FINDINGS"]), open(os.path.join(os.environ["RUNNER_TEMP"], "findings.json"), "w"))
+          json.dump(json.loads(os.environ["RESIDUAL_RISK"]), open(os.path.join(os.environ["RUNNER_TEMP"], "risk.json"), "w"))
+      - run: engineering-process review-attest --sha '${{ inputs.target-sha }}' --basis '${{ runner.temp }}/basis.json' --findings '${{ runner.temp }}/findings.json' --residual-risk '${{ runner.temp }}/risk.json' --identity '${{ github.actor }}' --producer-class authorized-human --context-id '${{ github.run_id }}:review' --implementation-context-id '${{ inputs.implementation-context-id }}' --output-dir '${{ runner.temp }}/review'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: process-independent-review-${{ inputs.target-sha }}
+          path: ${{ runner.temp }}/review
+          retention-days: 7

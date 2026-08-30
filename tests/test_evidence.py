@@ -15,7 +15,7 @@ def obligation(required):
 
 def att(predicate, sha=SHA, verdict="pass", context="review", implementation="build", fresh=True):
     capabilities = {"test-result/v1": "ci-automation", "independent-review/v1": "independent-review"}
-    return make_attestation("repo", sha, predicate, "1.0.1", REV, capabilities[predicate], verdict, "actor", context, implementation, fresh)
+    return make_attestation("repo", sha, predicate, "1.1.0", REV, capabilities[predicate], verdict, "actor", context, implementation, fresh)
 
 
 def test_evidence_from_another_commit_fails():

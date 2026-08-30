@@ -1,11 +1,12 @@
 classification/v1: {capability: orchestrator, passing_verdicts: [pass]}
 test-result/v1: {capability: ci-automation, passing_verdicts: [pass]}
+test-result/v2: {capability: ci-automation, passing_verdicts: [pass]}
 ux-verdict/v1: {capability: senior-ux-designer, passing_verdicts: [pass]}
 architecture-decision/v1: {capability: architect, passing_verdicts: [approved, pass]}
 functional-qa-verdict/v1: {capability: functional-qa, passing_verdicts: [pass]}
 non-functional-qa-verdict/v1: {capability: non-functional-qa, passing_verdicts: [pass]}
 independent-review/v1: {capability: independent-review, passing_verdicts: [pass]}
+independent-review/v2: {capability: independent-review, passing_verdicts: [pass]}
 solution-sufficiency/v1: {capability: solution-sufficiency, passing_verdicts: [sufficient]}
 human-approval/v1: {capability: product-owner, passing_verdicts: [approved]}
 deployment-release/v1: {capability: ci-automation, passing_verdicts: [pass]}
-

@@ -45,10 +45,9 @@ engineering-process explain \
   --base "$BASE_SHA" --head "$GITHUB_SHA" \
   --declared '{"observable_behavior":true}'
 
-engineering-process attest --predicate test-result/v1 \
-  --sha "$GITHUB_SHA" --capability ci-automation --verdict pass \
-  --identity github-actions --context-id "$GITHUB_RUN_ID" \
-  --output .engineering/evidence/test.json
+engineering-process run-validation --sha "$GITHUB_SHA" \
+  --obligations .engineering/effective-obligations.json \
+  --output-dir "$RUNNER_TEMP/objective-evidence"
 
 engineering-process readiness --sha "$GITHUB_SHA"
 engineering-process validate
@@ -56,6 +55,8 @@ engineering-process metrics --obligations .engineering/effective-obligations.jso
 ```
 
 Trusted classification derives the complete Git change set from exact `--base` and `--head` commits, including deletions and both rename paths. `--path` is untrusted and diagnostic-only. Classification is monotonic: declarations may strengthen routing but may not defeat deterministic Protected signals. Unknown Protected characteristics fail closed. `readiness` rejects malformed, failed, contradictory, wrong-repository, wrong-SHA, wrong-process-revision, unauthorized-producer, and invalid fresh-context review evidence. See the authoritative [evidence lifecycle](docs/evidence-lifecycle.md).
+
+Phase 2 adds a locked [agent-execution security baseline](docs/agent-execution-security.md), a complete [GitHub reference flow](enforcement/github/reference-flow.md), executable `test-result/v2` validation basis, and structured `independent-review/v2` evidence. `explain` reports profile-aware validation categories and the execution boundary. Reference evidence travels through GitHub artifacts and out-of-band provenance rather than source commits.
 
 ## Policy model
 

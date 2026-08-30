@@ -1,0 +1,99 @@
+name: Reference assurance flow
+on:
+  workflow_call:
+    inputs:
+      base-sha: {required: true, type: string}
+      target-sha: {required: true, type: string}
+      review-run-id: {required: true, type: string}
+permissions:
+  contents: read
+  actions: read
+jobs:
+  classify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: "${{ inputs.target-sha }}", fetch-depth: 0}
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - id: process
+        shell: bash
+        run: |
+          revision="$(python -c 'import json; print(json.load(open(".engineering/process.lock"))["revision"])')"
+          [[ "$revision" =~ ^[0-9a-f]{40}$ ]] || exit 2
+          echo "revision=$revision" >> "$GITHUB_OUTPUT"
+      - run: pip install 'git+https://github.com/suyog19/software-engineering-process@${{ steps.process.outputs.revision }}'
+      - run: engineering-process validate --runtime-revision '${{ steps.process.outputs.revision }}'
+      - run: engineering-process evaluate --base '${{ inputs.base-sha }}' --head '${{ inputs.target-sha }}' --output "$RUNNER_TEMP/obligations.json"
+      - run: engineering-process attest --predicate classification/v1 --sha '${{ inputs.target-sha }}' --capability orchestrator --verdict pass --identity github-actions --context-id '${{ github.run_id }}:classify' --output "$RUNNER_TEMP/classification.json"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: process-classification-${{ inputs.target-sha }}
+          path: |
+            ${{ runner.temp }}/obligations.json
+            ${{ runner.temp }}/classification.json
+          retention-days: 7
+  objective-validation:
+    needs: classify
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: "${{ inputs.target-sha }}", fetch-depth: 0}
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - id: process
+        shell: bash
+        run: |
+          revision="$(python -c 'import json; print(json.load(open(".engineering/process.lock"))["revision"])')"
+          [[ "$revision" =~ ^[0-9a-f]{40}$ ]] || exit 2
+          echo "revision=$revision" >> "$GITHUB_OUTPUT"
+      - run: pip install 'git+https://github.com/suyog19/software-engineering-process@${{ steps.process.outputs.revision }}'
+      - uses: actions/download-artifact@v4
+        with: {name: "process-classification-${{ inputs.target-sha }}", path: "${{ runner.temp }}/classification"}
+      - run: engineering-process run-validation --sha '${{ inputs.target-sha }}' --obligations '${{ runner.temp }}/classification/obligations.json' --output-dir '${{ runner.temp }}/objective'
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: process-objective-${{ inputs.target-sha }}
+          path: ${{ runner.temp }}/objective
+          retention-days: 7
+  readiness:
+    needs: [classify, objective-validation]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: "${{ inputs.target-sha }}", fetch-depth: 0}
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - id: process
+        shell: bash
+        run: |
+          revision="$(python -c 'import json; print(json.load(open(".engineering/process.lock"))["revision"])')"
+          [[ "$revision" =~ ^[0-9a-f]{40}$ ]] || exit 2
+          echo "revision=$revision" >> "$GITHUB_OUTPUT"
+      - run: pip install 'git+https://github.com/suyog19/software-engineering-process@${{ steps.process.outputs.revision }}'
+      - uses: actions/download-artifact@v4
+        with: {name: "process-classification-${{ inputs.target-sha }}", path: "${{ runner.temp }}/classification"}
+      - uses: actions/download-artifact@v4
+        with: {name: "process-objective-${{ inputs.target-sha }}", path: "${{ runner.temp }}/objective"}
+      - uses: actions/download-artifact@v4
+        with:
+          name: "process-independent-review-${{ inputs.target-sha }}"
+          run-id: ${{ inputs.review-run-id }}
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/review
+      - name: Assemble exact-SHA evidence and verified provenance
+        shell: bash
+        run: |
+          mkdir -p "$RUNNER_TEMP/evidence"
+          cp "$RUNNER_TEMP/classification/classification.json" "$RUNNER_TEMP/evidence/"
+          cp "$RUNNER_TEMP/objective/test-result.json" "$RUNNER_TEMP/evidence/"
+          cp "$RUNNER_TEMP/review/independent-review.json" "$RUNNER_TEMP/evidence/"
+          python - <<'PY'
+          import json, os
+          root=os.environ['RUNNER_TEMP']; merged={"evidence":{}}
+          for path in (f"{root}/objective/trust-index.json", f"{root}/review/trust-index.json"):
+              merged["evidence"].update(json.load(open(path))["evidence"])
+          json.dump(merged, open(f"{root}/trust-index.json", "w"))
+          PY
+      - run: engineering-process readiness --sha '${{ inputs.target-sha }}' --obligations '${{ runner.temp }}/classification/obligations.json' --evidence-dir '${{ runner.temp }}/evidence' --trust-index '${{ runner.temp }}/trust-index.json' --artifact-dir '${{ runner.temp }}/objective'
